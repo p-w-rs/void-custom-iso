@@ -212,9 +212,9 @@ cmd = [
     "-b",
     "base",
     "-r",
-    "https://mirrors.servercentral.com/voidlinux/current",
+    "https://repo-default.voidlinux.org/current",
     "-r",
-    "https://mirrors.servercentral.com/voidlinux/current/nonfree",
+    "https://repo-default.voidlinux.org/current/nonfree",
     # mklive.sh options (after --)
     "--",
     "-v",
