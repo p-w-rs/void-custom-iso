@@ -1,0 +1,23 @@
+package:     bluez
+service:     bluetoothd
+description:
+  The BlueZ Bluetooth stack daemon. Manages Bluetooth hardware, device
+  pairing and discovery, and Bluetooth profiles including audio (A2DP, HFP),
+  HID (keyboards, mice), and serial devices. Exposes a D-Bus API used by
+  desktop Bluetooth managers and by WirePlumber/PipeWire for Bluetooth audio.
+
+  Requires dbus to be running. For Bluetooth audio to work, wireplumber must
+  also be running as it manages the A2DP/HFP audio profiles.
+
+  After install, the runit service is at /etc/sv/bluetoothd.
+
+when_to_use:
+  Server:  Rarely — only for specific use cases like a Bluetooth gateway,
+           IoT serial device, or Bluetooth input device on a home server.
+  Desktop: Yes, if you use Bluetooth devices (headphones, keyboard, mouse).
+
+conflicts:
+  None from services in this collection. Requires dbus + wireplumber for
+  Bluetooth audio to function.
+
+server: NO (unless specific Bluetooth hardware use case)

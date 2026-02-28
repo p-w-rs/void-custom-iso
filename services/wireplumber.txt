@@ -1,0 +1,22 @@
+package:     wireplumber
+service:     wireplumber (user service)
+description:
+  The session and policy manager for PipeWire. PipeWire handles low-level
+  audio/video routing but needs a session manager to decide how streams are
+  connected — which app gets which device, device hotplug handling, routing
+  rules, and Bluetooth audio profile management. WirePlumber is the standard
+  recommended session manager for PipeWire, replacing the older
+  pipewire-media-session.
+
+  Runs as a user-level service alongside pipewire. PipeWire without a
+  session manager is essentially non-functional for normal desktop use.
+
+when_to_use:
+  Server:  No.
+  Desktop: Yes — always run alongside pipewire.
+
+conflicts:
+  pipewire-media-session — the older PipeWire session manager; run only one
+                           session manager at a time.
+
+server: NO

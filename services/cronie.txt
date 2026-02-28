@@ -1,0 +1,22 @@
+package:     cronie
+service:     cronie
+description:
+  A cron daemon that runs scheduled tasks defined in user and system
+  crontabs. On Void/runit there are no built-in timer mechanisms, so a
+  cron daemon is the standard way to schedule recurring jobs such as
+  backups, certificate renewal (certbot), log rotation, and cleanup scripts.
+
+  After install, the runit service is at /etc/sv/cronie.
+  System crontabs live in /etc/cron.d/ and /var/spool/cron/.
+
+when_to_use:
+  Server:  Yes — needed for any scheduled automation.
+  Desktop: Yes — useful for backups and maintenance scripts.
+
+conflicts:
+  dcron  — alternative cron daemon; run only one cron daemon.
+  fcron  — same conflict.
+  scron  — same conflict.
+  tinycron — same conflict.
+
+server: YES

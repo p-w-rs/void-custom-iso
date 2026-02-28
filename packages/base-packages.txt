@@ -1,0 +1,13 @@
+void-repo-nonfree
+void-repo-debug
+linux-mainline
+linux-mainline-headers
+kmscon
+base-devel
+gcc gdb glibc
+llvm clang clang-devel clang-headers clang-analyzer clang-tools-extralldb
+libstdc++ libstdc++-devel
+libssh openssh libssh-devel
+libdrm libinput libxkbcommon
+cronie
+unison

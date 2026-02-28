@@ -1,0 +1,8 @@
+mangowc
+scenefx
+scenefx-devel
+wlroots
+wlroots-devel
+pcre2
+pcre2-devel
+libpcre2

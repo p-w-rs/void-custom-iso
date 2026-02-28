@@ -1,0 +1,21 @@
+package:     polkit
+service:     polkitd
+description:
+  A privilege management service that allows unprivileged processes to
+  request elevated permissions in a controlled, policy-based way without
+  requiring full sudo access. Examples: allowing a normal user to reboot,
+  mount drives, manage NetworkManager connections, or install packages via
+  a GUI. Many desktop environments and GUI tools silently depend on polkit.
+
+  Requires dbus and elogind to function correctly on Void.
+
+  After install, the runit service is at /etc/sv/polkitd.
+
+when_to_use:
+  Server:  Rarely. Only if running GUI tools or services that require it.
+  Desktop: Yes — most DEs and GUI admin tools expect it.
+
+conflicts:
+  None from services in this collection. Requires dbus + elogind.
+
+server: NO

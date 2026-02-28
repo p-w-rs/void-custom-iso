@@ -1,0 +1,6 @@
+nvidia
+nvidia-container-toolkit
+nvidia-dkms
+nvidia-firmware
+nvidia-libs
+nvtop

@@ -1,0 +1,1 @@
+fontconfig font-firacode font-fira-ttf font-3270 font-Hasklig font-awesome6 font-cozette font-crosextra-caladea-ttf font-crosextra-carlito-ttf font-hack-ttf font-fantasque-sans-ttf

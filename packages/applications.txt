@@ -1,0 +1,3 @@
+Solaar
+ghostty
+chromium chromium-widevine

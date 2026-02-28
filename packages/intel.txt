@@ -1,0 +1,3 @@
+intel-media-driver
+intel-ucode
+linux-firmware-intel

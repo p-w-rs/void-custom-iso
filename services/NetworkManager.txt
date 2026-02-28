@@ -1,0 +1,26 @@
+package:     NetworkManager
+service:     NetworkManager
+description:
+  A high-level network management daemon that automatically handles wired,
+  Wi-Fi, VPN, and mobile broadband connections. It provides automatic
+  connection switching, roaming, and integrates with desktop applets such
+  as nm-applet and network settings GUIs in GNOME, KDE, etc.
+
+  Requires dbus to be running. Disable dhcpcd on any interface you want
+  NetworkManager to manage, or conflicts will cause network instability.
+
+  After install, the runit service is at /etc/sv/NetworkManager.
+
+when_to_use:
+  Server:  Generally no — dhcpcd or static config is simpler and more
+           predictable. Use NetworkManager on a server only if you have
+           a specific need (VPN management, complex bonding setups, etc.).
+  Desktop: Yes, especially on laptops with Wi-Fi and VPN requirements.
+
+conflicts:
+  dhcpcd      — do not run both on the same interface.
+  wpa_supplicant — NetworkManager manages wpa_supplicant internally;
+                   do not run a separate wpa_supplicant service alongside it
+                   on the same interface.
+
+server: NO (prefer dhcpcd for servers)

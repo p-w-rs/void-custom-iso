@@ -1,0 +1,23 @@
+package:     openssh
+service:     sshd
+description:
+  OpenSSH provides encrypted remote login and command execution over SSH.
+  The sshd daemon listens for incoming connections. It is the standard way
+  to administer any remote Linux machine and is also useful on desktops if
+  you ever need to log in from another device or use the machine as a jump
+  host.
+
+  After install, the runit service is at /etc/sv/sshd.
+  Harden sshd_config before exposing to the internet:
+    - Set PasswordAuthentication no (prefer SSH keys)
+    - Consider changing Port from 22
+    - Set PermitRootLogin no
+
+when_to_use:
+  Server:  Always. Enable this first before anything else.
+  Desktop: Optional. Enable if you need remote access to this machine.
+
+conflicts:
+  None.
+
+server: YES - essential

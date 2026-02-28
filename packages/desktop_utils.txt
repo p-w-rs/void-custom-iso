@@ -1,0 +1,13 @@
+Waybar
+nemo
+rofi
+dunst
+cliphist
+swww
+gammastep
+wl-clipboard
+wl-clip-persist
+wlogout
+polkit-gnome
+wlsunset
+xdg-desktop-portal-wlr

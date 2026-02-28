@@ -1,0 +1,22 @@
+package:     kmscon
+service:     kmscon (replaces getty on a TTY)
+description:
+  A userspace virtual terminal replacement that uses KMS (Kernel Mode
+  Setting) and OpenGL to render a terminal directly on the framebuffer. It
+  replaces the standard agetty/getty TTY with a GPU-accelerated terminal
+  that supports Unicode, scalable fonts, and improved rendering — without
+  running a full desktop environment.
+
+  kmscon is configured per-TTY. You disable getty on a TTY (e.g. tty1) and
+  replace it with kmscon. It is a niche tool for those who want a better
+  TTY experience without a DE.
+
+when_to_use:
+  Server:  No — requires KMS/GPU output and a physical display.
+  Desktop: Optional — only if you want a significantly better TTY experience
+           and are running a minimal setup without a display manager.
+
+conflicts:
+  agetty / getty on the same TTY — you replace one with the other, not both.
+
+server: NO

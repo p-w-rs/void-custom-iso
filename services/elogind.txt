@@ -1,0 +1,23 @@
+package:     elogind
+service:     elogind
+description:
+  Standalone fork of systemd-logind for non-systemd systems. Manages user
+  login sessions, seats (the collection of display/input hardware assigned
+  to a local user), power/suspend/hibernate button events, and exposes the
+  logind D-Bus API. Many desktop applications, display managers, polkit,
+  and Wayland compositors expect this API to exist.
+
+  On Void with runit, elogind is the recommended way to handle session and
+  seat management on a desktop. It does far more than seatd alone.
+
+  After install, the runit service is at /etc/sv/elogind.
+
+when_to_use:
+  Server:  No.
+  Desktop: Yes. Enable before your display manager, compositor, or DE.
+
+conflicts:
+  seatd — both manage seats; use one or the other, not both.
+  (systemd-logind is not present on Void so no conflict there.)
+
+server: NO

@@ -1,0 +1,19 @@
+package:     cups
+service:     cupsd
+description:
+  The Common Unix Printing System daemon. Manages local and network
+  printers, handles print queues and jobs, and provides a web admin
+  interface at http://localhost:631. Required for printing from any
+  application on the system. Can also act as a print server for other
+  machines on the network.
+
+  After install, the runit service is at /etc/sv/cupsd.
+
+when_to_use:
+  Server:  Only if this machine is acting as a print server.
+  Desktop: Only if you print. Disable it if you have no printer.
+
+conflicts:
+  None.
+
+server: NO (unless acting as a print server)

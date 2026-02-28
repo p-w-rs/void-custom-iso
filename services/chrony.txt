@@ -1,0 +1,22 @@
+package:     chrony
+service:     chronyd
+description:
+  A modern NTP (Network Time Protocol) daemon that synchronizes the system
+  clock with internet time servers. Accurate system time is critical: wrong
+  time breaks TLS certificate validation, corrupts log timestamps, and
+  causes failures in cron jobs, Kerberos, and distributed systems.
+
+  On Void there is no built-in time sync (unlike some other distros), so
+  this must be installed and enabled manually.
+
+  After install, the runit service is at /etc/sv/chronyd.
+
+when_to_use:
+  Server:  Yes — always. Enable on every machine.
+  Desktop: Yes — always. Enable on every machine.
+
+conflicts:
+  openntpd — alternative NTP daemon; run only one NTP daemon at a time.
+  ntpd      — same; run only one NTP daemon at a time.
+
+server: YES - essential

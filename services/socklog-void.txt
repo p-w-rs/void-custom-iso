@@ -1,0 +1,33 @@
+package:     socklog-void
+service:     socklog-unix, nanoklogd
+description:
+  socklog-void is the Void Linux configuration package for socklog, a syslog
+  implementation written by the author of runit. It provides two runit
+  services:
+
+    socklog-unix — listens on /dev/log and collects messages from daemons
+                   that write to the standard syslog socket.
+    nanoklogd    — captures kernel messages (equivalent of klogd).
+
+  Together they replace journald/syslogd and write logs as plain text files
+  to /var/log/socklog/ organized by facility (daemon, kernel, auth, etc.).
+  Logs can be tailed with the included svlogtail utility.
+
+  Without this (or another syslog daemon), most daemon log output is silently
+  lost on a Void/runit system. This is one of the most commonly forgotten
+  steps on a fresh Void install.
+
+  After install, enable both services:
+    ln -s /etc/sv/socklog-unix /var/service/
+    ln -s /etc/sv/nanoklogd    /var/service/
+
+when_to_use:
+  Server:  Yes — critical. You need logs to diagnose anything.
+  Desktop: Yes — highly recommended.
+
+conflicts:
+  rsyslog     — alternative syslog daemon; run only one syslog daemon.
+  metalog     — same conflict.
+  inetutils-syslog — same conflict.
+
+server: YES - essential

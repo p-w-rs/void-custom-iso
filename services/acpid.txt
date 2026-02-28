@@ -1,0 +1,27 @@
+package:     acpid
+service:     acpid
+description:
+  The ACPI event daemon. Listens for hardware events — lid open/close,
+  power button press, battery status changes, AC adapter plug/unplug —
+  and executes scripts in response. Useful for defining custom behavior
+  on physical hardware events, especially on laptops or home servers with
+  a power button you want to handle gracefully.
+
+  Scripts live in /etc/acpi/. Default scripts handle basic power events.
+
+  After install, the runit service is at /etc/sv/acpid.
+
+  Note: elogind also handles some ACPI power events (suspend on lid close,
+  etc.) via logind.conf. On a full desktop with elogind, acpid may be
+  redundant for basic actions but is still useful for custom scripting.
+
+when_to_use:
+  Server:  Rarely — only if you want to script behavior for the physical
+           power button on a home server or bare-metal machine.
+  Desktop: Yes, especially on laptops.
+
+conflicts:
+  Overlaps with elogind power event handling (lid close, power button).
+  Not a hard conflict — both can run, but configure one to avoid duplication.
+
+server: NO (unless bare-metal with physical controls you want to script)

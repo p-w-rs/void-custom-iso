@@ -1,0 +1,22 @@
+package:     pipewire-pulse
+service:     pipewire-pulse (user service)
+description:
+  A PulseAudio compatibility socket provided by PipeWire. It makes PipeWire
+  present itself as a PulseAudio server on the standard PulseAudio socket,
+  so all applications written against the PulseAudio API (which is most
+  audio apps) work transparently with PipeWire without any modification.
+
+  This is not a separate audio server — it is a compatibility shim that
+  runs as part of the PipeWire user session. Required any time you use
+  PipeWire on a desktop that has PulseAudio-based apps.
+
+when_to_use:
+  Server:  No.
+  Desktop: Yes — always enable alongside pipewire and wireplumber.
+
+conflicts:
+  pulseaudio — both try to bind the same PulseAudio socket; only one can
+               run at a time. Disable pulseaudio completely before enabling
+               pipewire-pulse.
+
+server: NO

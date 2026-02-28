@@ -1,0 +1,20 @@
+package:     avahi
+service:     avahi-daemon
+description:
+  Implements mDNS/DNS-SD (Multicast DNS / Zeroconf / Bonjour). Allows
+  devices on a local network to discover each other by hostname without
+  a DNS server (e.g. reaching a machine at hostname.local). Also enables
+  local network service discovery — printers, network shares, SSH hosts —
+  used by CUPS, Nautilus network browsing, and other tools.
+
+  After install, the runit service is at /etc/sv/avahi-daemon.
+
+when_to_use:
+  Server:  Optional — useful if you want to reach the server by
+           servername.local on your LAN without setting up DNS.
+  Desktop: Yes, if you use local network discovery (printers, file shares).
+
+conflicts:
+  None. Requires dbus.
+
+server: OPTIONAL

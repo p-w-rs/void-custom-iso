@@ -1,0 +1,20 @@
+package:     dbus
+service:     dbus
+description:
+  D-Bus is an inter-process communication (IPC) message bus. It provides a
+  channel through which system services and applications talk to each other.
+  Nearly every desktop service depends on it: NetworkManager, elogind,
+  Bluetooth (bluez), polkit, PipeWire, and most GUI apps all communicate
+  over D-Bus. Without dbus running, most desktop software will fail to start
+  or behave incorrectly.
+
+  After install, the runit service is at /etc/sv/dbus.
+
+when_to_use:
+  Server:  Only if a running service requires it (e.g. NetworkManager does).
+  Desktop: Yes — always. Enable it before elogind, NetworkManager, etc.
+
+conflicts:
+  None.
+
+server: CONDITIONAL (yes if NetworkManager or bluez are used)

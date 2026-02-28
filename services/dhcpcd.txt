@@ -1,0 +1,22 @@
+package:     dhcpcd
+service:     dhcpcd
+description:
+  A DHCP client daemon. Automatically configures network interfaces by
+  requesting an IP address and routing info from a DHCP server. Lightweight
+  and simple compared to NetworkManager. Void ships dhcpcd as its default
+  network configuration tool. Works well for machines with stable, simple
+  networking needs: servers, wired desktops, or any machine that does not
+  need Wi-Fi roaming or VPN management via a GUI.
+
+  After install, the runit service is at /etc/sv/dhcpcd.
+  To manage a specific interface only: copy /etc/sv/dhcpcd to
+  /etc/sv/dhcpcd-eth0 and add the interface name to the run script.
+
+when_to_use:
+  Server:  Yes — preferred over NetworkManager for servers.
+  Desktop: Yes, if you do not need NetworkManager's features.
+
+conflicts:
+  NetworkManager — do not run both on the same interface.
+
+server: YES
