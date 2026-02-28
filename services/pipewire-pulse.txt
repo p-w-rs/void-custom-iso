@@ -1,4 +1,4 @@
-package:     pipewire-pulse
+package:     pipewire
 service:     pipewire-pulse
 description:
   A PulseAudio compatibility socket provided by PipeWire. It makes PipeWire
