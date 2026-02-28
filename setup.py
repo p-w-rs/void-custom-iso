@@ -1,10 +1,14 @@
+import re
 import subprocess
 from pathlib import Path
 
-services_path = Path("./services")
+project_root = Path(__file__).parent.resolve()
+mklive_root = project_root / "void-mklive"
+
+services_path = project_root / "services"
 services = []
 
-packages_path = Path("./packages")
+packages_path = project_root / "packages"
 packages = []
 
 
@@ -19,18 +23,33 @@ def load_package_set(file: Path) -> list[str]:
         return [pkg for line in f for pkg in line.strip().split() if pkg]
 
 
+def parse_service_names(raw: str) -> list[str]:
+    """Parse service names from a service: field value.
+
+    Handles comma-separated lists (e.g. 'socklog-unix, nanoklogd') and strips
+    parenthetical notes (e.g. 'pipewire (user service)' → 'pipewire').
+    """
+    names = []
+    for part in raw.split(","):
+        name = re.sub(r"\s*\(.*?\)", "", part).strip()
+        if name:
+            names.append(name)
+    return names
+
+
 def load_service_file(file: Path) -> dict:
-    """Parse a service file and return a dict with package, service, and raw content."""
+    """Parse a service file and return a dict with package, services, and raw content."""
     with open(file, "r") as f:
         content = f.read()
 
-    result = {"package": None, "service": None, "content": content}
+    result = {"package": None, "services": None, "content": content}
 
     for line in content.splitlines():
         if line.startswith("package:"):
             result["package"] = line.split(":", 1)[1].strip()
         elif line.startswith("service:"):
-            result["service"] = line.split(":", 1)[1].strip()
+            raw = line.split(":", 1)[1].strip()
+            result["services"] = parse_service_names(raw)
 
     return result
 
@@ -84,7 +103,7 @@ print(f"{'═' * 40}")
 for file in sorted(services_path.glob("*")):
     info = load_service_file(file)
 
-    if not info["package"] or not info["service"]:
+    if not info["package"] or not info["services"]:
         print(f"\n[{file.name}] — missing package or service field, skipping.")
         continue
 
@@ -93,14 +112,21 @@ for file in sorted(services_path.glob("*")):
     print(f"{'─' * 40}")
     print(info["content"])
 
-    if prompt_yes_no(
-        f"\nAdd service '{info['service']}' (package: '{info['package']}')?"
-    ):
+    svc_label = ", ".join(info["services"])
+    if prompt_yes_no(f"\nAdd service(s) '{svc_label}' (package: '{info['package']}')?"):
         packages.append(info["package"])
-        services.append(info["service"])
-        print(f"  ✓ Added service '{info['service']}' and package '{info['package']}'.")
+        services.extend(info["services"])
+        print(f"  ✓ Added service(s) '{svc_label}' and package '{info['package']}'.")
     else:
         print(f"  ✗ Skipped.")
+
+
+# ─────────────────────────────────────────
+#  Dedup (preserve selection order)
+# ─────────────────────────────────────────
+
+packages = list(dict.fromkeys(packages))
+services = list(dict.fromkeys(services))
 
 
 # ─────────────────────────────────────────
@@ -142,7 +168,7 @@ if not prompt_yes_no("Run mkiso.sh with the above selection?"):
 
 cmd = [
     "sudo",
-    "./void-mklive/mkiso.sh",
+    "./mkiso.sh",
     "-a",
     "x86_64",
     "-b",
@@ -154,9 +180,9 @@ cmd = [
     "-r",
     "https://mirrors.servercentral.com/voidlinux/current/nonfree",
     "-I",
-    "./custom-files",
+    str(project_root / "custom-files"),
     "-x",
-    "./post-setup.sh",
+    str(project_root / "post-setup.sh"),
     "--",
     "-k",
     "linux-mainline",
@@ -174,5 +200,6 @@ print("  Running command:")
 print("  " + " ".join(cmd))
 print()
 
-result = subprocess.run(cmd)
+# Run from inside void-mklive so that ./lib.sh resolves correctly
+result = subprocess.run(cmd, cwd=mklive_root)
 raise SystemExit(result.returncode)

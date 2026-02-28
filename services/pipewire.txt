@@ -1,5 +1,5 @@
 package:     pipewire
-service:     pipewire (user service)
+service:     pipewire
 description:
   A modern, low-latency multimedia server that handles audio and video
   streams. Designed to replace both PulseAudio (desktop audio) and JACK

@@ -1,5 +1,5 @@
 package:     pipewire-pulse
-service:     pipewire-pulse (user service)
+service:     pipewire-pulse
 description:
   A PulseAudio compatibility socket provided by PipeWire. It makes PipeWire
   present itself as a PulseAudio server on the standard PulseAudio socket,

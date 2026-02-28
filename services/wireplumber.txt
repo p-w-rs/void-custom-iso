@@ -1,5 +1,5 @@
 package:     wireplumber
-service:     wireplumber (user service)
+service:     wireplumber
 description:
   The session and policy manager for PipeWire. PipeWire handles low-level
   audio/video routing but needs a session manager to decide how streams are
