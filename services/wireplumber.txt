@@ -1,22 +1,25 @@
 package:     wireplumber
-service:     wireplumber
+user_service: true
 description:
   The session and policy manager for PipeWire. PipeWire handles low-level
   audio/video routing but needs a session manager to decide how streams are
   connected — which app gets which device, device hotplug handling, routing
   rules, and Bluetooth audio profile management. WirePlumber is the standard
-  recommended session manager for PipeWire, replacing the older
-  pipewire-media-session.
+  recommended session manager for PipeWire.
 
-  Runs as a user-level service alongside pipewire. PipeWire without a
-  session manager is essentially non-functional for normal desktop use.
+  NOTE: This is a USER service. It has no entry in /etc/sv/ and cannot be
+  enabled via -S. Enable it in your user runit session alongside pipewire
+  and pipewire-pulse. PipeWire without a session manager is non-functional
+  for normal desktop use.
+
+  wireplumber-elogind (in audio-system.txt packages) is the elogind-linked
+  variant and must be used when elogind is running.
 
 when_to_use:
   Server:  No.
-  Desktop: Yes — always run alongside pipewire.
+  Desktop: Yes — always run alongside pipewire and pipewire-pulse.
 
 conflicts:
-  pipewire-media-session — the older PipeWire session manager; run only one
-                           session manager at a time.
+  pipewire-media-session — the older PipeWire session manager; run only one.
 
 server: NO

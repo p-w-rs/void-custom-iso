@@ -38,11 +38,23 @@ def parse_service_names(raw: str) -> list[str]:
 
 
 def load_service_file(file: Path) -> dict:
-    """Parse a service file and return a dict with package, services, and raw content."""
+    """Parse a service file and return a dict with package, services, and raw content.
+
+    Fields parsed:
+      package:      the xbps package to install
+      service:      comma-separated runit service name(s) to enable via -S
+      user_service: true/yes — package installed but service NOT passed to -S
+                    (must be enabled per-user in ~/.config/runit/sv/)
+    """
     with open(file, "r") as f:
         content = f.read()
 
-    result = {"package": None, "services": None, "content": content}
+    result = {
+        "package": None,
+        "services": None,
+        "user_service": False,
+        "content": content,
+    }
 
     for line in content.splitlines():
         if line.startswith("package:"):
@@ -50,6 +62,9 @@ def load_service_file(file: Path) -> dict:
         elif line.startswith("service:"):
             raw = line.split(":", 1)[1].strip()
             result["services"] = parse_service_names(raw)
+        elif line.startswith("user_service:"):
+            val = line.split(":", 1)[1].strip().lower()
+            result["user_service"] = val in ("true", "yes", "1")
 
     return result
 
@@ -103,8 +118,15 @@ print(f"{'═' * 40}")
 for file in sorted(services_path.glob("*")):
     info = load_service_file(file)
 
-    if not info["package"] or not info["services"]:
-        print(f"\n[{file.name}] — missing package or service field, skipping.")
+    # Skip files missing required fields.
+    # user_service entries need package but no service: field.
+    if not info["package"]:
+        print(f"\n[{file.name}] — missing package field, skipping.")
+        continue
+    if not info["user_service"] and not info["services"]:
+        print(
+            f"\n[{file.name}] — missing service field and not a user_service, skipping."
+        )
         continue
 
     print(f"\n{'─' * 40}")
@@ -112,11 +134,26 @@ for file in sorted(services_path.glob("*")):
     print(f"{'─' * 40}")
     print(info["content"])
 
-    svc_label = ", ".join(info["services"])
-    if prompt_yes_no(f"\nAdd service(s) '{svc_label}' (package: '{info['package']}')?"):
+    if info["user_service"]:
+        label = (
+            f"package '{info['package']}' (user service — enable manually after boot)"
+        )
+        question = f"\nInstall {label}?"
+    else:
+        svc_label = ", ".join(info["services"])
+        label = f"service(s) '{svc_label}' (package: '{info['package']}')"
+        question = f"\nAdd {label}?"
+
+    if prompt_yes_no(question):
         packages.append(info["package"])
-        services.extend(info["services"])
-        print(f"  ✓ Added service(s) '{svc_label}' and package '{info['package']}'.")
+        if not info["user_service"]:
+            services.extend(info["services"])
+        if info["user_service"]:
+            print(
+                f"  ✓ Added package '{info['package']}' (user service — see note above)."
+            )
+        else:
+            print(f"  ✓ Added {label}.")
     else:
         print(f"  ✗ Skipped.")
 
@@ -144,7 +181,7 @@ if packages:
 else:
     print("    (none selected)")
 
-print(f"\n  Services ({len(services)} total):")
+print(f"\n  Services to enable via -S ({len(services)} total):")
 if services:
     for svc in services:
         print(f"    • {svc}")

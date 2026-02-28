@@ -1,3 +1,7 @@
 Solaar
 ghostty
-chromium chromium-widevine
+chromium
+# chromium-widevine is intentionally excluded from the ISO build.
+# Its post-install script downloads from dl.google.com, which is unreachable
+# in the mklive build chroot. Install it manually after first boot:
+#   sudo xbps-install chromium-widevine

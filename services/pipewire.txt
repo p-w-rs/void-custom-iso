@@ -1,17 +1,24 @@
 package:     pipewire
-service:     pipewire
+user_service: true
 description:
   A modern, low-latency multimedia server that handles audio and video
   streams. Designed to replace both PulseAudio (desktop audio) and JACK
   (pro-audio), while also managing camera and video device access used by
   screen sharing under Wayland, Flatpak apps, and browser video capture.
 
-  On Void, pipewire runs as a user-level runit service, not system-level.
-  It must be paired with wireplumber (session manager) to be functional,
-  and pipewire-pulse to maintain compatibility with PulseAudio applications.
+  NOTE: pipewire, pipewire-pulse, and wireplumber are USER services.
+  They do not have entries in /etc/sv/ and cannot be enabled via -S.
+  After first boot, enable them in your user runit session:
 
-  User service location: ~/.config/runit/sv/pipewire or via a user service
-  manager. See Void docs for user service setup.
+    mkdir -p ~/.config/runit/sv
+    ln -s /usr/share/pipewire/pipewire.desktop ~/.config/autostart/
+    # or use the void-provided user service mechanism:
+    # cp -r /usr/share/pipewire/service ~/.config/runit/sv/pipewire
+    # ln -s ~/.config/runit/sv/pipewire ~/.local/share/runit/service/
+
+  See the Void Handbook section on user services for the full setup.
+  Select pipewire, pipewire-pulse, and wireplumber together — all three
+  are required for a working audio stack.
 
 when_to_use:
   Server:  No — no audio/video need on a headless server.
