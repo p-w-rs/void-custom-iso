@@ -1,3 +1,4 @@
+linux-firmware-nvidia
 nvidia
 nvidia-container-toolkit
 nvidia-dkms
