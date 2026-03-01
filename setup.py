@@ -215,6 +215,8 @@ cmd = [
     "https://repo-default.voidlinux.org/current",
     "-r",
     "https://repo-default.voidlinux.org/current/nonfree",
+    "-r",
+    "https://repo-default.voidlinux.org/current/debug",
     # mklive.sh options (after --)
     "--",
     "-v",
