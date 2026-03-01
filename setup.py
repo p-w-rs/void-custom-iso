@@ -221,6 +221,8 @@ cmd = [
     "--",
     "-g",
     "linux6.12 linux6.12-headers",
+    "-C",
+    "mitigations=off nowatchdog threadirqs",
     "-v",
     "linux6.18",
     "-I",

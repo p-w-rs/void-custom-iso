@@ -1,6 +1,7 @@
 linux-firmware-nvidia
 nvidia
 nvidia-container-toolkit
+nvidia-docker
 nvidia-dkms
 nvidia-firmware
 nvidia-libs
