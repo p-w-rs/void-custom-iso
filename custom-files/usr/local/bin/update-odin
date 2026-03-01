@@ -1,0 +1,80 @@
+#!/bin/bash
+# update-odin — Install or update Odin and OLS (Odin Language Server)
+#
+# Fresh install: clones both repos, builds, and symlinks binaries
+# Update:        pulls latest, rebuilds, symlinks are already in place
+#
+# Odin:  /opt/odin   → /usr/local/bin/odin
+# OLS:   /opt/ols    → /usr/local/bin/ols
+
+set -e
+
+ODIN_DIR="/opt/odin"
+OLS_DIR="/opt/ols"
+BIN_DIR="/usr/local/bin"
+
+need_root() {
+    if [ "$(id -u)" -ne 0 ]; then
+        echo "ERROR: update-odin must be run as root (use sudo)."
+        exit 1
+    fi
+}
+
+need_root
+
+# ─────────────────────────────────────────
+#  Odin
+# ─────────────────────────────────────────
+
+echo "=== Odin ==="
+
+if [ -d "$ODIN_DIR/.git" ]; then
+    echo "  Updating existing clone..."
+    git -C "$ODIN_DIR" pull --ff-only
+else
+    echo "  Cloning Odin..."
+    git clone https://github.com/odin-lang/Odin "$ODIN_DIR"
+fi
+
+echo "  Building (make release native)..."
+make -C "$ODIN_DIR" release native
+
+ln -sf "$ODIN_DIR/odin" "$BIN_DIR/odin"
+echo "  Symlinked: $BIN_DIR/odin -> $ODIN_DIR/odin"
+
+echo "  Odin version: $(\"$ODIN_DIR/odin\" version)"
+
+
+# ─────────────────────────────────────────
+#  OLS (Odin Language Server)
+# ─────────────────────────────────────────
+
+echo ""
+echo "=== OLS ==="
+
+if [ -d "$OLS_DIR/.git" ]; then
+    echo "  Updating existing clone..."
+    git -C "$OLS_DIR" pull --ff-only
+else
+    echo "  Cloning OLS..."
+    git clone https://github.com/DanielGavin/ols "$OLS_DIR"
+fi
+
+echo "  Building OLS..."
+# OLS build.sh expects ODIN_ROOT to point to the Odin source tree
+ODIN_ROOT="$ODIN_DIR" bash "$OLS_DIR/build.sh"
+
+ln -sf "$OLS_DIR/ols" "$BIN_DIR/ols"
+echo "  Symlinked: $BIN_DIR/ols -> $OLS_DIR/ols"
+
+
+# ─────────────────────────────────────────
+#  Done
+# ─────────────────────────────────────────
+
+echo ""
+echo "=== Done ==="
+echo "  odin: $(which odin) — $(odin version)"
+echo "  ols:  $(which ols)"
+echo ""
+echo "  Run 'sudo update-odin' at any time to update both."
