@@ -16,3 +16,4 @@ juliaup
 lua
 luarocks
 sile
+gnuplot

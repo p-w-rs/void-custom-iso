@@ -1,0 +1,8 @@
+unison
+mup
+rsync
+uftp
+bftp
+sftpgo
+tftp-hpa
+qrcp

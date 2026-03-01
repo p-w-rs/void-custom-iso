@@ -1,3 +1,4 @@
 Solaar
 ghostty
 chromium
+gtypist

@@ -1,0 +1,8 @@
+mupdf
+mupdf-devel
+mupdf-tools
+paperjam
+pdfarranger
+pdfcpu
+pdfgrep
+pdftag
