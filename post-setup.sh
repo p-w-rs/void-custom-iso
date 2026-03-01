@@ -123,7 +123,7 @@ fi
 # ─────────────────────────────────────────
 #  update-odin script
 #
-#  Shipped via custom-files into /usr/local/bin/update-odin.
+#  Shipped via custom-files into /opt/update-odin.
 #  Ensure it is executable since git may drop the bit.
 # ─────────────────────────────────────────
 
