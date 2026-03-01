@@ -7,7 +7,6 @@ enchive
 makepasswd
 tomb
 sqlcipher
-sqlcipher-devel
 argon2
 cloak
 keepassxc
