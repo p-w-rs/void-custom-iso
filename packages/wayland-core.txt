@@ -2,7 +2,6 @@ wayland
 wayland-protocols
 libxkbcommon
 pixman
-seatd
 elogind
 xdg-desktop-portal
 xdg-desktop-portal-gtk

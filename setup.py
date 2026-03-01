@@ -219,6 +219,8 @@ cmd = [
     "https://repo-default.voidlinux.org/current/debug",
     # mklive.sh options (after --)
     "--",
+    "-g",
+    "linux6.12 linux6.12-headers",
     "-v",
     "linux6.18",
     "-I",
@@ -226,7 +228,9 @@ cmd = [
     "-x",
     str(project_root / "post-setup.sh"),
     "-k",
-    "linux6.18",
+    "us",
+    "-l",
+    "en_US.UTF-8",
     "-e",
     "/usr/bin/fish",
 ]

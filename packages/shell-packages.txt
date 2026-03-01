@@ -16,7 +16,7 @@ fzf
 zoxide
 resvg
 ImageMagick
-ffmpeg
+ffmpeg libx264 libx265 libvpx libopus libdav1d
 yazi
 zellij
 helix
