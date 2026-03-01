@@ -1,5 +1,7 @@
 void-repo-nonfree
 void-repo-debug
+linux6.18
+linux6.18-headers
 kmscon
 base-devel
 gcc gdb glibc

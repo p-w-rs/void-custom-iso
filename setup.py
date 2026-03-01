@@ -220,13 +220,13 @@ cmd = [
     # mklive.sh options (after --)
     "--",
     "-v",
-    "linux-mainline",
+    "linux6.18",
     "-I",
     str(project_root / "custom-files"),
     "-x",
     str(project_root / "post-setup.sh"),
     "-k",
-    "linux-mainline",
+    "linux6.18",
     "-e",
     "/usr/bin/fish",
 ]
