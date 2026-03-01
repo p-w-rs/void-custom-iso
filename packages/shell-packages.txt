@@ -16,7 +16,7 @@ fzf
 zoxide
 resvg
 ImageMagick
-ffmpeg libx264 libx265 libvpx libopus libdav1d
+ffmpeg ffplay alsa-plugins-ffmpeg libavcodec libavdevice libavfilter libavformat libavresample libswscale libavutil libpostproc nv-codec-headers libvpx libvpx-devel libvpx-tools libaom libaom-devel libaom-tools rav1e rav1e-devel opus opus-devel opus-tools
 yazi
 zellij
 helix
