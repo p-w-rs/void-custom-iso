@@ -1,0 +1,28 @@
+package:     nftables runit-nftables
+service:     nftables
+description:
+  The nftables packet filtering framework — successor to iptables. Loads
+  firewall rules from /etc/nftables.conf at service start. The default
+  ruleset shipped with this ISO:
+
+    - Allows all outbound traffic.
+    - Allows established/related inbound traffic (replies to your requests).
+    - Allows SSH (tcp port 22) inbound.
+    - Allows ICMP/ICMPv6 (ping) inbound.
+    - Drops everything else inbound.
+
+  This is a safe baseline for any internet-connected machine. Add rules to
+  /etc/nftables.conf as needed (e.g. open port 80/443 for a web server)
+  and restart the service: sv restart nftables
+
+  After install, the runit service is at /etc/sv/nftables.
+
+when_to_use:
+  Server:  Yes — critical. An SSH-exposed machine without a firewall is
+           relying entirely on sshd having no vulnerabilities.
+  Desktop: Yes — strongly recommended, especially on untrusted networks.
+
+conflicts:
+  iptables service — do not run both; nftables replaces iptables.
+
+server: YES - essential

@@ -1,0 +1,15 @@
+acmetool
+certbot
+age
+ccrypt
+encfs
+enchive
+makepasswd
+tomb
+sqlcipher
+sqlcipher-devel
+argon2
+cloak
+keepassxc
+lesspass
+pdfcrack
