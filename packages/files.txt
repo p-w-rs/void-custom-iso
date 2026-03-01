@@ -8,3 +8,4 @@ bftpd
 sftpgo
 tftp-hpa
 qrcp
+samba
