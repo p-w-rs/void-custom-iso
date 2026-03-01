@@ -1,0 +1,3 @@
+helix
+yazi
+zellij

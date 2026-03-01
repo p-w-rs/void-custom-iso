@@ -1,0 +1,15 @@
+fish-shell
+curl
+wget
+htop
+btop
+file
+fontconfig
+eza
+bat
+7zip
+jq
+fd
+ripgrep
+fzf
+zoxide

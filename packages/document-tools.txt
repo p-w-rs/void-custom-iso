@@ -1,3 +1,4 @@
+# mode: desktop
 mupdf
 mupdf-devel
 mupdf-tools

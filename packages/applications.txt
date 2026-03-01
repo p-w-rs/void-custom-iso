@@ -1,3 +1,4 @@
+# mode: desktop
 ghostty
 chromium
 mupdf

@@ -1,0 +1,7 @@
+ffmpeg ffplay alsa-plugins-ffmpeg
+libavcodec libavdevice libavfilter libavformat libavresample libswscale libavutil libpostproc
+nv-codec-headers
+libvpx libvpx-devel libvpx-tools
+libaom libaom-devel libaom-tools
+rav1e rav1e-devel
+opus opus-devel opus-tools

@@ -1,2 +1,10 @@
 fuse
 TMSU
+unison
+mup
+rsync
+uftp
+bftpd
+sftpgo
+tftp-hpa
+qrcp

@@ -1,0 +1,7 @@
+# mode: desktop
+Waybar
+rofi
+dunst
+swww
+wlogout
+wlsunset

@@ -1,0 +1,6 @@
+# mode: desktop
+polkit-gnome
+xdg-desktop-portal-wlr
+wl-clipboard
+wl-clip-persist
+cliphist

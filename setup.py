@@ -1,15 +1,27 @@
+#!/usr/bin/env python3
+"""Void Linux custom ISO builder — interactive package and service selector."""
+
+import os
 import re
+import stat
 import subprocess
 from pathlib import Path
 
 project_root = Path(__file__).parent.resolve()
 mklive_root = project_root / "void-mklive"
-
 services_path = project_root / "services"
-services = []
-
 packages_path = project_root / "packages"
-packages = []
+
+
+# ─────────────────────────────────────────
+#  Sanity checks
+# ─────────────────────────────────────────
+
+if not (mklive_root / "mkiso.sh").exists():
+    print(f"  ERROR: {mklive_root / 'mkiso.sh'} not found.")
+    print("  Make sure the void-mklive submodule is initialised:")
+    print("    git submodule update --init")
+    raise SystemExit(1)
 
 
 # ─────────────────────────────────────────
@@ -17,18 +29,37 @@ packages = []
 # ─────────────────────────────────────────
 
 
-def load_package_set(file: Path) -> list[str]:
-    """Read and return all packages listed in a file (space or newline separated)."""
+def load_package_file(file: Path) -> dict:
+    """Read a package file and return its mode and package list.
+
+    Files may begin with a ``# mode: <mode>`` comment where mode is one of
+    'both', 'desktop', or 'server'.  If the header is absent the file is
+    treated as 'both' (included regardless of build mode).
+    """
     with open(file, "r") as f:
-        return [pkg for line in f for pkg in line.strip().split() if pkg]
+        content = f.read()
+
+    mode = "both"
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped.lower().startswith("# mode:"):
+            mode = stripped.split(":", 1)[1].strip().lower()
+            break
+        elif stripped and not stripped.startswith("#"):
+            break
+
+    pkgs = []
+    for line in content.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        pkgs.extend(stripped.split())
+
+    return {"mode": mode, "packages": pkgs}
 
 
 def parse_service_names(raw: str) -> list[str]:
-    """Parse service names from a service: field value.
-
-    Handles comma-separated lists (e.g. 'socklog-unix, nanoklogd') and strips
-    parenthetical notes (e.g. 'pipewire (user service)' → 'pipewire').
-    """
+    """Parse comma-separated service names, stripping parenthetical notes."""
     names = []
     for part in raw.split(","):
         name = re.sub(r"\s*\(.*?\)", "", part).strip()
@@ -38,13 +69,13 @@ def parse_service_names(raw: str) -> list[str]:
 
 
 def load_service_file(file: Path) -> dict:
-    """Parse a service file and return a dict with package, services, and raw content.
+    """Parse a service description file.
 
-    Fields parsed:
-      package:      the xbps package to install
-      service:      comma-separated runit service name(s) to enable via -S
-      user_service: true/yes — package installed but service NOT passed to -S
-                    (must be enabled per-user in ~/.config/runit/sv/)
+    Fields:
+      package:       xbps package name
+      service:       comma-separated runit service name(s) to enable via -S
+      user_service:  true → package installed, but NOT passed to -S
+      server:        YES / NO / OPTIONAL / CONDITIONAL tag
     """
     with open(file, "r") as f:
         content = f.read()
@@ -53,6 +84,7 @@ def load_service_file(file: Path) -> dict:
         "package": None,
         "services": None,
         "user_service": False,
+        "server_tag": None,
         "content": content,
     }
 
@@ -65,13 +97,18 @@ def load_service_file(file: Path) -> dict:
         elif line.startswith("user_service:"):
             val = line.split(":", 1)[1].strip().lower()
             result["user_service"] = val in ("true", "yes", "1")
+        elif line.startswith("server:"):
+            result["server_tag"] = line.split(":", 1)[1].strip()
 
     return result
 
 
-def prompt_yes_no(question: str) -> bool:
+def prompt_yes_no(question: str, default: bool | None = None) -> bool:
+    hint = {True: "[Y/n]", False: "[y/N]", None: "[y/n]"}[default]
     while True:
-        answer = input(f"{question} [y/n]: ").strip().lower()
+        answer = input(f"{question} {hint}: ").strip().lower()
+        if not answer and default is not None:
+            return default
         if answer in ("y", "yes"):
             return True
         if answer in ("n", "no"):
@@ -79,83 +116,128 @@ def prompt_yes_no(question: str) -> bool:
         print("  Please enter 'y' or 'n'.")
 
 
+def service_recommendation(tag: str | None, mode: str) -> tuple[str, bool | None]:
+    """Return a display label and prompt default based on server tag and build mode."""
+    if tag is None or mode == "desktop":
+        return ("", None)
+
+    t = tag.upper()
+    if "ESSENTIAL" in t:
+        return (" 🟢 essential for servers", True)
+    if "YES" in t and "NO" not in t:
+        return (" 🟢 recommended for servers", True)
+    if "CONDITIONAL" in t:
+        return (" 🟡 conditional — read description", None)
+    if "OPTIONAL" in t:
+        return (" 🟡 optional for servers", None)
+    if "NO" in t:
+        return (" 🔴 not needed for servers", False)
+    return ("", None)
+
+
+# ─────────────────────────────────────────
+#  Mode selection
+# ─────────────────────────────────────────
+
+print(f"\n{'═' * 58}")
+print("  VOID LINUX — CUSTOM ISO BUILDER")
+print(f"{'═' * 58}\n")
+print("  [1] Desktop — mangowc compositor, greetd login manager,")
+print("                audio (PipeWire), Bluetooth, GUI apps")
+print("  [2] Server  — kmscon TTY on tty1, SSH-focused, no desktop\n")
+
+while True:
+    choice = input("  Build mode [1/2]: ").strip()
+    if choice in ("1", "desktop"):
+        mode = "desktop"
+        break
+    if choice in ("2", "server"):
+        mode = "server"
+        break
+    print("  Enter 1 or 2.")
+
+print(f"\n  → {mode.upper()} mode selected.\n")
+
+packages: list[str] = []
+services: list[str] = []
+
+
 # ─────────────────────────────────────────
 #  Packages
 # ─────────────────────────────────────────
 
-print(f"\n{'═' * 40}")
+print(f"{'═' * 58}")
 print("  PACKAGES")
-print(f"{'═' * 40}")
+print(f"{'═' * 58}")
 
 for file in sorted(packages_path.glob("*")):
-    pkg_list = load_package_set(file)
+    info = load_package_file(file)
+    pkg_list = info["packages"]
 
     if not pkg_list:
-        print(f"\n[{file.name}] — empty, skipping.")
         continue
 
-    print(f"\n{'─' * 40}")
-    print(f"  {file.name}")
-    print(f"{'─' * 40}")
+    file_mode = info["mode"]
+
+    if mode == "server" and file_mode == "desktop":
+        print(f"\n  {file.name}  🔴 desktop-only — skipped")
+        continue
+    if mode == "desktop" and file_mode == "server":
+        print(f"\n  {file.name}  🔴 server-only — skipped")
+        continue
+
+    print(f"\n{'─' * 58}")
+    tag = f"  [{file_mode}]" if file_mode != "both" else ""
+    print(f"  {file.name}{tag}")
+    print(f"{'─' * 58}")
     for pkg in pkg_list:
         print(f"  • {pkg}")
 
-    if prompt_yes_no(f"\nAdd all {len(pkg_list)} package(s) from '{file.name}'?"):
+    if prompt_yes_no(
+        f"\n  Add {len(pkg_list)} package(s) from '{file.name}'?", default=True
+    ):
         packages.extend(pkg_list)
-        print(f"  ✓ Added {len(pkg_list)} package(s).")
+        print("  ✓ Added.")
     else:
-        print(f"  ✗ Skipped.")
+        print("  ✗ Skipped.")
 
 
 # ─────────────────────────────────────────
 #  Services
 # ─────────────────────────────────────────
 
-print(f"\n{'═' * 40}")
+print(f"\n{'═' * 58}")
 print("  SERVICES")
-print(f"{'═' * 40}")
+print(f"{'═' * 58}")
 
 for file in sorted(services_path.glob("*")):
     info = load_service_file(file)
 
-    # Skip files missing required fields.
-    # user_service entries need package but no service: field.
     if not info["package"]:
-        print(f"\n[{file.name}] — missing package field, skipping.")
         continue
     if not info["user_service"] and not info["services"]:
-        print(
-            f"\n[{file.name}] — missing service field and not a user_service, skipping."
-        )
         continue
 
-    print(f"\n{'─' * 40}")
-    print(f"  {file.name}")
-    print(f"{'─' * 40}")
+    rec_label, rec_default = service_recommendation(info["server_tag"], mode)
+
+    print(f"\n{'─' * 58}")
+    print(f"  {file.name}{rec_label}")
+    print(f"{'─' * 58}")
     print(info["content"])
 
     if info["user_service"]:
-        label = (
-            f"package '{info['package']}' (user service — enable manually after boot)"
-        )
-        question = f"\nInstall {label}?"
+        question = f"  Install '{info['package']}' (user service — enable after boot)?"
     else:
-        svc_label = ", ".join(info["services"])
-        label = f"service(s) '{svc_label}' (package: '{info['package']}')"
-        question = f"\nAdd {label}?"
+        svc = ", ".join(info["services"])
+        question = f"  Enable {svc} (package: {info['package']})?"
 
-    if prompt_yes_no(question):
+    if prompt_yes_no(question, rec_default):
         packages.append(info["package"])
         if not info["user_service"]:
             services.extend(info["services"])
-        if info["user_service"]:
-            print(
-                f"  ✓ Added package '{info['package']}' (user service — see note above)."
-            )
-        else:
-            print(f"  ✓ Added {label}.")
+        print("  ✓ Added.")
     else:
-        print(f"  ✗ Skipped.")
+        print("  ✗ Skipped.")
 
 
 # ─────────────────────────────────────────
@@ -170,43 +252,43 @@ services = list(dict.fromkeys(services))
 #  Summary
 # ─────────────────────────────────────────
 
-print(f"\n{'═' * 40}")
-print("  SUMMARY")
-print(f"{'═' * 40}")
+print(f"\n{'═' * 58}")
+print(f"  SUMMARY — {mode.upper()}")
+print(f"{'═' * 58}")
 
-print(f"\n  Packages ({len(packages)} total):")
-if packages:
-    for pkg in packages:
-        print(f"    • {pkg}")
-else:
-    print("    (none selected)")
+print(f"\n  Packages ({len(packages)}):")
+for pkg in packages or ["(none)"]:
+    print(f"    • {pkg}")
 
-print(f"\n  Services to enable via -S ({len(services)} total):")
-if services:
-    for svc in services:
-        print(f"    • {svc}")
-else:
-    print("    (none selected)")
+print(f"\n  Services via -S ({len(services)}):")
+for svc in services or ["(none)"]:
+    print(f"    • {svc}")
 
-print(f"\n{'═' * 40}\n")
+print()
 
 if not packages and not services:
     print("  Nothing selected — aborting.")
     raise SystemExit(1)
 
-if not prompt_yes_no("Run mkiso.sh with the above selection?"):
+if not prompt_yes_no("  Build ISO with the above?"):
     print("  Aborted.")
     raise SystemExit(0)
 
 
 # ─────────────────────────────────────────
-#  Build command and run
+#  Build
 # ─────────────────────────────────────────
+
+wrapper = project_root / ".post-setup-wrapper.sh"
+with open(wrapper, "w") as f:
+    f.write("#!/bin/bash\n")
+    f.write(f'export VOID_ISO_MODE="{mode}"\n')
+    f.write(f'exec "{project_root / "post-setup.sh"}" "$@"\n')
+os.chmod(str(wrapper), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP)
 
 cmd = [
     "sudo",
     "./mkiso.sh",
-    # mkiso.sh options (before --)
     "-a",
     "x86_64",
     "-b",
@@ -217,7 +299,6 @@ cmd = [
     "https://repo-default.voidlinux.org/current/nonfree",
     "-r",
     "https://repo-default.voidlinux.org/current/debug",
-    # mklive.sh options (after --)
     "--",
     "-g",
     "linux6.12 linux6.12-headers",
@@ -228,7 +309,7 @@ cmd = [
     "-I",
     str(project_root / "custom-files"),
     "-x",
-    str(project_root / "post-setup.sh"),
+    str(wrapper),
     "-k",
     "us",
     "-l",
@@ -239,14 +320,15 @@ cmd = [
 
 if services:
     cmd += ["-S", " ".join(services)]
-
 if packages:
     cmd += ["-p", " ".join(packages)]
 
-print("  Running command:")
+print("\n  Command:")
 print("  " + " ".join(cmd))
 print()
 
-# Run from inside void-mklive so that ./lib.sh resolves correctly
 result = subprocess.run(cmd, cwd=mklive_root)
+
+wrapper.unlink(missing_ok=True)
+
 raise SystemExit(result.returncode)
