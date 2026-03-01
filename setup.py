@@ -5,6 +5,7 @@ import os
 import re
 import stat
 import subprocess
+from datetime import date
 from pathlib import Path
 
 project_root = Path(__file__).parent.resolve()
@@ -270,6 +271,43 @@ if not packages and not services:
     print("  Nothing selected — aborting.")
     raise SystemExit(1)
 
+
+# ─────────────────────────────────────────
+#  Output path and filename
+# ─────────────────────────────────────────
+
+print(f"{'═' * 58}")
+print("  OUTPUT")
+print(f"{'═' * 58}\n")
+
+today = date.today().strftime("%Y%m%d")
+default_dir = Path.home() / "void-isos"
+default_name = f"void-custom-{mode}-{today}.iso"
+
+raw_dir = input(f"  Output directory [{default_dir}]: ").strip()
+out_dir = Path(raw_dir).expanduser() if raw_dir else default_dir
+
+raw_name = input(f"  ISO filename [{default_name}]: ").strip()
+out_name = raw_name if raw_name else default_name
+
+if not out_name.endswith(".iso"):
+    out_name += ".iso"
+
+out_path = out_dir / out_name
+
+print(f"\n  → ISO will be written to: {out_path}\n")
+
+try:
+    out_dir.mkdir(parents=True, exist_ok=True)
+except OSError as e:
+    print(f"  ERROR: Could not create output directory: {e}")
+    raise SystemExit(1)
+
+
+# ─────────────────────────────────────────
+#  Confirm and build
+# ─────────────────────────────────────────
+
 if not prompt_yes_no("  Build ISO with the above?"):
     print("  Aborted.")
     raise SystemExit(0)
@@ -300,6 +338,8 @@ cmd = [
     "-r",
     "https://repo-default.voidlinux.org/current/debug",
     "--",
+    "-o",
+    str(out_path),
     "-g",
     "linux6.12 linux6.12-headers",
     "-C",
@@ -330,5 +370,10 @@ print()
 result = subprocess.run(cmd, cwd=mklive_root)
 
 wrapper.unlink(missing_ok=True)
+
+if result.returncode == 0:
+    print(f"\n  ✓ ISO written to: {out_path}")
+else:
+    print(f"\n  ✗ Build failed (exit code {result.returncode}).")
 
 raise SystemExit(result.returncode)
