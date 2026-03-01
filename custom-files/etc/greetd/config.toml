@@ -1,0 +1,8 @@
+[terminal]
+vt = 1
+
+[default_session]
+# agreety is the built-in TUI greeter bundled with greetd.
+# It prompts for username + password, then launches --cmd as that user.
+command = "agreety --cmd mangowc"
+user = "greeter"

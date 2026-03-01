@@ -1,0 +1,28 @@
+package:     greetd
+service:     greetd
+description:
+  A minimal, flexible display manager (login manager) for Wayland compositors.
+  greetd handles user authentication and then launches a configured session
+  command (e.g. a Wayland compositor like mangowc) as the authenticated user.
+
+  Uses agreety as its built-in TUI greeter — prompts for username and
+  password, then launches the configured session. No GUI required.
+
+  Requires elogind and dbus to be running. The greeter system user must
+  exist (created by post-setup.sh).
+
+  Configuration lives at /etc/greetd/config.toml.
+  After install, the runit service is at /etc/sv/greetd.
+
+  NOTE: post-setup.sh disables agetty-tty1 and enables greetd on tty1.
+  kmscon runs on tty2 as a fallback terminal (switch with Ctrl+Alt+F2).
+
+when_to_use:
+  Server:  No.
+  Desktop: Yes — use this to launch your Wayland compositor on login.
+
+conflicts:
+  sddm, gdm, lightdm — run only one display manager at a time.
+  agetty-tty1         — disabled by post-setup.sh in favour of greetd.
+
+server: NO

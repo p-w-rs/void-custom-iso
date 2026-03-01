@@ -1,0 +1,6 @@
+glu
+mesa-dri
+mesa-opencl
+mesa-vaapi
+mesa-vdpau
+mesa-vulkan-intel

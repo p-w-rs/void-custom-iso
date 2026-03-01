@@ -6,3 +6,7 @@ nvidia-dkms
 nvidia-firmware
 nvidia-libs
 nvtop
+nvidia-opencl
+nvidia-vaapi-driver
+nv-codec-headers
+nvidia-gtklibs

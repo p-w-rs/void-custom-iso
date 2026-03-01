@@ -1,2 +1,4 @@
 #!/bin/sh
-exec kmscon --vt=1 2>&1
+# kmscon runs on tty2 — tty1 is owned by greetd.
+# Switch to this terminal with Ctrl+Alt+F2.
+exec kmscon --vt=2 2>&1
