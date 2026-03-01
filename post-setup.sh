@@ -6,7 +6,6 @@ ROOTFS="$1"
 
 echo "=== Custom Void Linux Setup ==="
 echo "ROOTFS: $ROOTFS"
-printf "\n\n\n\nI RAN!!!!!!\n\n\n\n"
 
 
 # ─────────────────────────────────────────
