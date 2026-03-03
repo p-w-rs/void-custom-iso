@@ -10,7 +10,9 @@ set MOUNT_ROOT      /mnt
 set IGNORE_PKGS     linux linux-headers
 
 # Packages to install on with base-system
-set BASE_PACKAGES   base-system linux-mainline linux-mainline-headers sudo fish-shell net-tools xtools parted grub-x86_64-efi glibc-locales
+set BASE_PACKAGES   base-system linux-mainline linux-mainline-headers \
+                    sudo acpi chrony dhcpcd openssh wpa_supplicant \
+                    fish-shell net-tools xtools parted grub-x86_64-efi glibc-locales
 
 # ── 1. Copy XBPS RSA keys ──────────────────────────────────────────────────────
 echo "Copying XBPS RSA keys..."
