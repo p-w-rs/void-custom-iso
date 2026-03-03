@@ -22,9 +22,23 @@ if not (mklive_root / "mklive.sh").exists():
 #  Packages
 # ─────────────────────────────────────────
 
-kernel = ["linux-mainline", "linux-mainline-headers"]
-shell = ["fish-shell"]
+kernel = ["linux-mainline", "linux-mainline-headers", "void-repo-nonfree"]
 intel = ["linux-firmware-intel", "intel-media-driver", "intel-ucode"]
+nvidia = []
+devbase = ["base-devel", "make", "cmake", "pkg-config", "binutils", "patch"]
+devlibs = [
+    "libstdc++",
+    "libstdc++-devel",
+    "libdrm",
+    "libdrm-devel",
+    "libinput",
+    "libinput-devel",
+    "libxkbcommon",
+    "libxkbcommon-devel",
+]
+gcc = ["gcc", "gdb", "glibc"]
+llvm = ["llvm", "clang", "clang-analyzer", "clang-tools-extra", "lldb"]
+shell = ["fish-shell", "curl", "wget", "htop", "btop", "fontconfig"]
 py = ["python", "uv"]
 mesa = [
     "glu",
@@ -41,7 +55,9 @@ rm = [
     "linux6.18-headers",
 ]
 
-packages = " ".join(set([*kernel, *shell, *intel, *py]))
+packages = " ".join(
+    set([*kernel, *intel, *nvidia, *devbase, *devlibs, *gcc, *llvm, *shell, *py, *mesa])
+)
 remove = " ".join(rm)
 
 
