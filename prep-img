@@ -1,0 +1,51 @@
+#!/usr/bin/env fish
+
+# ── Configuration ─────────────────────────────────────────────────────────────
+# Sizes accept K, M, or G units (e.g. 512K, 100M, 4G)
+set IMG_FILE   void.img
+set IMG_SIZE   64G
+set EFI_SIZE   100M
+set SWAP_SIZE  4G
+
+# ── Derived values ─────────────────────────────────────────────────────────────
+# Convert sizes to plain MB, then stack them to get absolute parted positions.
+# We start at 1M to leave room for the GPT header.
+set MATH (dirname (status filename))/helpers/size-mb
+
+set EFI_MB  (MATH $EFI_SIZE)  || exit 1
+set SWAP_MB (MATH $SWAP_SIZE) || exit 1
+
+set EFI_START  1M
+set EFI_END    (math "1 + $EFI_MB")M
+set SWAP_START $EFI_END
+set SWAP_END   (math "1 + $EFI_MB + $SWAP_MB")M
+
+# ── 1. Create the disk image ───────────────────────────────────────────────────
+echo "Creating $IMG_SIZE disk image: $IMG_FILE ..."
+truncate -s $IMG_SIZE $IMG_FILE || exit 1
+
+# ── 2. Attach a loop device so we can treat the image like a real disk ─────────
+echo "Attaching loop device..."
+set LOOP (sudo losetup --find --partscan --show $IMG_FILE) || exit 1
+echo "Loop device: $LOOP"
+
+# ── 3. Write a GPT partition table with EFI, swap, and root partitions ─────────
+echo "Partitioning $LOOP..."
+sudo parted --script $LOOP \
+    mklabel gpt \
+    mkpart EFI  fat32      $EFI_START  $EFI_END  \
+    mkpart swap linux-swap $SWAP_START $SWAP_END \
+    mkpart root ext4       $SWAP_END   100%      \
+    set 1 esp on || exit 1
+
+sleep 1
+
+# ── 4. Format each partition ───────────────────────────────────────────────────
+echo "Formatting partitions..."
+sudo mkfs.vfat -F32 -n EFI  {$LOOP}p1 || exit 1   # EFI  → FAT32
+sudo mkswap    -L swap       {$LOOP}p2 || exit 1   # swap → swap
+sudo mkfs.ext4 -L root       {$LOOP}p3 || exit 1   # root → ext4
+
+echo ""
+echo "Done! Loop device: $LOOP"
+echo "Detach when finished with: sudo losetup -d $LOOP"

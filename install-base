@@ -1,15 +1,15 @@
 #!/usr/bin/env fish
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-set REPO            https://repo-default.voidlinux.org/current
-set ARCH            x86_64
-set MOUNT_ROOT      /mnt
+set REPO                https://repo-default.voidlinux.org/current https://repo-default.voidlinux.org/current/nonfree
+set ARCH                x86_64
+set MOUNT_ROOT          /mnt
 
 # Packages to ignore (will not be installed even as dependencies)
-set IGNORE_PKGS     linux linux-headers
+set IGNORE_PKGS         linux linux-headers
 
 # Packages to install on top of base-system
-set PACKAGES        base-system linux-mainline linux-mainline-headers
+set BASE_PACKAGES       base-system linux-mainline linux-mainline-headers fish-shell
 
 # ── 1. Copy XBPS RSA keys ──────────────────────────────────────────────────────
 echo "Copying XBPS RSA keys..."
@@ -26,13 +26,13 @@ for pkg in $IGNORE_PKGS
 end
 
 # ── 3. Bootstrap base installation ────────────────────────────────────────────
-echo "Installing: $PACKAGES"
+echo "Installing: $BASE_PACKAGES"
 echo "Repo:       $REPO"
 echo "Arch:       $ARCH"
 echo "Target:     $MOUNT_ROOT"
 echo ""
 
-sudo env XBPS_ARCH=$ARCH xbps-install -S -r $MOUNT_ROOT -R $REPO $PACKAGES || exit 1
+sudo env XBPS_ARCH=$ARCH xbps-install -S -r $MOUNT_ROOT -R $REPO $BASE_PACKAGES || exit 1
 
 echo ""
 echo "Done! Base system installed to $MOUNT_ROOT"

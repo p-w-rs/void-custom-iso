@@ -1,0 +1,26 @@
+#!/usr/bin/env fish
+# enable-services.fish
+# Runs INSIDE the chroot.
+# Enables runit services listed in void-config.fish.
+
+set SCRIPT_DIR (dirname (status filename))
+source $SCRIPT_DIR/void-config.fish
+
+echo "=== Enabling Runit Services ==="
+echo ""
+
+for svc in $SERVICES
+    if test -d /etc/sv/$svc
+        ln -sf /etc/sv/$svc /var/service/
+        echo "    [ENABLED] $svc"
+    else
+        echo "    [SKIPPED] $svc (not found in /etc/sv)"
+    end
+end
+
+echo ""
+echo ">>> Enabled services:"
+ls -1 /var/service/
+
+echo ""
+echo ">>> enable-services complete."

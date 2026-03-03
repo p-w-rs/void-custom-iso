@@ -1,0 +1,59 @@
+#!/usr/bin/env fish
+# configure-void.fish
+# Runs INSIDE the chroot.
+# Configures hostname, locale, rc.conf, root password, and new user.
+
+set SCRIPT_DIR (dirname (status filename))
+source $SCRIPT_DIR/void-config.fish
+
+echo "=== Void Linux System Configuration ==="
+echo ""
+
+# ── Hostname ──────────────────────────────────────────────────────────────────
+echo ">>> Setting hostname: $HOSTNAME"
+echo $HOSTNAME > /etc/hostname
+
+# ── rc.conf ───────────────────────────────────────────────────────────────────
+echo ">>> Writing /etc/rc.conf..."
+echo "TIMEZONE=\"$TIMEZONE\""     >  /etc/rc.conf
+echo "HARDWARECLOCK=\"UTC\""      >> /etc/rc.conf
+echo "KEYMAP=\"$KEYMAP\""         >> /etc/rc.conf
+echo "FONT=\"lat9w-16\""          >> /etc/rc.conf
+echo "TTYS=2"                     >> /etc/rc.conf
+
+# ── Locale ────────────────────────────────────────────────────────────────────
+echo ">>> Enabling locale: $LOCALE"
+set LOCALE_ESCAPED (string escape --style=regex $LOCALE)
+sed -i "s/^#($LOCALE_ESCAPED.*)/\1/" /etc/default/libc-locales
+
+echo ">>> Generating locale files..."
+xbps-reconfigure -f glibc-locales
+
+# ── sudo ──────────────────────────────────────────────────────────────────────
+echo ">>> Installing sudo..."
+xbps-install -Sy sudo
+
+echo ">>> Granting wheel group sudo access..."
+echo "%wheel ALL=(ALL:ALL) ALL" > /etc/sudoers.d/wheel
+chmod 440 /etc/sudoers.d/wheel
+
+# ── Root password ─────────────────────────────────────────────────────────────
+echo ""
+echo ">>> Set the ROOT password:"
+passwd root
+
+# ── New user ──────────────────────────────────────────────────────────────────
+echo ""
+echo ">>> Creating user: $NEW_USER"
+useradd -m -G wheel,audio,video,cdrom,optical,kvm,xbuilder -s /usr/bin/fish $NEW_USER
+
+echo ">>> Set password for $NEW_USER:"
+passwd $NEW_USER
+
+# ── Summary ───────────────────────────────────────────────────────────────────
+echo ""
+echo ">>> configure-void complete."
+echo "    Hostname : $HOSTNAME"
+echo "    Timezone : $TIMEZONE"
+echo "    Locale   : $LOCALE"
+echo "    User     : $NEW_USER (wheel/sudo)"

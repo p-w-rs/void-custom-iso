@@ -1,0 +1,72 @@
+#!/usr/bin/env fish
+
+# ── Configuration ─────────────────────────────────────────────────────────────
+# Sizes accept K, M, or G units (e.g. 512K, 100M, 4G)
+set EFI_SIZE   100M
+set SWAP_SIZE  4G
+
+# ── Derived values ─────────────────────────────────────────────────────────────
+# Convert sizes to plain MB, then stack them to get absolute parted positions.
+# We start at 1M to leave room for the GPT header.
+set MATH (dirname (status filename))/helpers/size-mb
+
+set EFI_MB  (MATH $EFI_SIZE)  || exit 1
+set SWAP_MB (MATH $SWAP_SIZE) || exit 1
+
+set EFI_START  1M
+set EFI_END    (math "1 + $EFI_MB")M
+set SWAP_START $EFI_END
+set SWAP_END   (math "1 + $EFI_MB + $SWAP_MB")M
+
+# ── 1. Validate the disk argument ─────────────────────────────────────────────
+if test (count $argv) -ne 1
+    echo "Usage: "(status filename)" <disk>"
+    echo "Example: "(status filename)" /dev/sda"
+    exit 1
+end
+
+set DISK $argv[1]
+
+if not test -b $DISK
+    echo "Error: '$DISK' is not a block device."
+    exit 1
+end
+
+# ── 2. Safety confirmation — user must type the device name to proceed ─────────
+echo "WARNING: This will DESTROY all data on $DISK"
+echo -n "Type the device name to confirm: "
+read CONFIRM
+
+if test "$CONFIRM" != "$DISK"
+    echo "Confirmation failed. Aborting."
+    exit 1
+end
+
+# ── 3. Determine partition naming convention ───────────────────────────────────
+# NVMe and loop devices append 'p' before the number (e.g. nvme0n1p1)
+# SATA/SCSI drives do not (e.g. sda1)
+if string match -qr '(nvme|loop)' $DISK
+    set PART_PREFIX {$DISK}p
+else
+    set PART_PREFIX $DISK
+end
+
+# ── 4. Write a GPT partition table with EFI, swap, and root partitions ─────────
+echo "Partitioning $DISK..."
+sudo parted --script $DISK \
+    mklabel gpt \
+    mkpart EFI  fat32      $EFI_START  $EFI_END  \
+    mkpart swap linux-swap $SWAP_START $SWAP_END \
+    mkpart root ext4       $SWAP_END   100%      \
+    set 1 esp on || exit 1
+
+sleep 1
+
+# ── 5. Format each partition ───────────────────────────────────────────────────
+echo "Formatting partitions..."
+sudo mkfs.vfat -F32 -n EFI  {$PART_PREFIX}1 || exit 1   # EFI  → FAT32
+sudo mkswap    -L swap       {$PART_PREFIX}2 || exit 1   # swap → swap
+sudo mkfs.ext4 -L root       {$PART_PREFIX}3 || exit 1   # root → ext4
+
+echo ""
+echo "Done! $DISK has been partitioned and formatted."
