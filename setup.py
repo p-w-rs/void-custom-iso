@@ -23,7 +23,6 @@ if not (mklive_root / "mklive.sh").exists():
 # ─────────────────────────────────────────
 
 kernel = ["linux-mainline", "linux-mainline-headers"]
-ob_66 = ["66", "66-devel", "66-init", "66-tools", "66-doc"]
 shell = ["fish-shell"]
 intel = ["linux-firmware-intel", "intel-media-driver", "intel-ucode"]
 py = ["python", "uv"]
@@ -35,11 +34,6 @@ mesa = [
     "mesa-vdpau",
     "mesa-vulkan-intel",
 ]
-
-# NOTE: runit-void is intentionally NOT removed here.
-# mklive.sh enables runit services (agetty-tty1, etc.) during the build
-# and requires /etc/sv/* to exist. Removing runit-void causes a build failure.
-# post-setup.py handles switching the active init to 66 after rootfs is built.
 rm = [
     "linux6.12",
     "linux6.12-headers",
@@ -47,7 +41,7 @@ rm = [
     "linux6.18-headers",
 ]
 
-packages = " ".join(set([*kernel, *ob_66, *shell, *py]))
+packages = " ".join(set([*kernel, *shell, *intel, *py]))
 remove = " ".join(rm)
 
 
@@ -108,10 +102,8 @@ cmd = [
     str(project_root / "custom-files"),
     "-x",
     "post-setup.py",
-    # Point the kernel at 66-init instead of runit.
-    # mitigations=off nowatchdog threadirqs are your perf tweaks.
     "-C",
-    "init=/usr/bin/66 mitigations=off nowatchdog threadirqs",
+    "mitigations=off nowatchdog threadirqs",
     "-v",
     "linux-mainline",
     "-k",
