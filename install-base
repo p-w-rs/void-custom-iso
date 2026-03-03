@@ -9,7 +9,7 @@ set MOUNT_ROOT      /mnt
 # Packages to ignore (will not be installed even as dependencies)
 set IGNORE_PKGS     linux linux-headers
 
-# Packages to install on top of base-system
+# Packages to install on with base-system
 set BASE_PACKAGES   base-system linux-mainline linux-mainline-headers sudo fish-shell net-tools xtools parted grub-x86_64-efi glibc-locales
 
 # ── 1. Copy XBPS RSA keys ──────────────────────────────────────────────────────
