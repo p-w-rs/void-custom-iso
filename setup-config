@@ -9,15 +9,23 @@ set CONFIG_FILE (dirname (status filename))/chroot/config
 echo "=== Void Linux Installation Configuration ==="
 echo ""
 
-read -P "Hostname: " HOSTNAME
-read -P "Timezone (e.g. America/Boise): " TIMEZONE
-read -P "Keymap (e.g. us): " KEYMAP
-read -P "Locale (e.g. en_US.UTF-8): " LOCALE
-read -P "New username: " NEW_USER
+read -P "Hostname [void]: "             HOSTNAME
+read -P "Timezone [America/Boise]: "    TIMEZONE
+read -P "Keymap [us]: "                 KEYMAP
+read -P "Locale [en_US.UTF-8]: "        LOCALE
+read -P "New username [void]: "         NEW_USER
 
 echo ""
 echo "Services to enable (space-separated, e.g: acpid chronyd dhcpcd sshd wpa_supplicant)"
-read -P "Services: " -t SERVICES
+read -P "Services: [acpid chronyd dhcpcd sshd wpa_supplicant]" -t SERVICES
+
+# ── Apply defaults for any empty values ───────────────────────────────────────
+if test -z "$HOSTNAME";  set HOSTNAME  void;            end
+if test -z "$TIMEZONE";  set TIMEZONE  America/Boise; end
+if test -z "$KEYMAP";    set KEYMAP    us;               end
+if test -z "$LOCALE";    set LOCALE    en_US.UTF-8;      end
+if test -z "$NEW_USER";  set NEW_USER  void;             end
+if test -z "$SERVICES";  set SERVICES  "acpid chronyd dhcpcd sshd wpa_supplicant"; end
 
 echo ""
 echo ">>> Writing config to $CONFIG_FILE..."
