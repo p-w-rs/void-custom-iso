@@ -21,7 +21,7 @@ end
 
 # ── Generate fstab ────────────────────────────────────────────────────────────
 echo ">>> Generating fstab..."
-xgenfstab -U $CHROOT | sudo tee $CHROOT/etc/fstab
+xgenfstab -L $CHROOT | sudo tee $CHROOT/etc/fstab
 echo "    Done."
 cat $CHROOT/etc/fstab
 
