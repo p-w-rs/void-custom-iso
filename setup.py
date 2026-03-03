@@ -101,7 +101,7 @@ cmd = [
     "-I",
     str(project_root / "custom-files"),
     "-x",
-    "post-setup.py",
+    str(project_root / "post-setup.py"),
     "-C",
     "mitigations=off nowatchdog threadirqs",
     "-v",
