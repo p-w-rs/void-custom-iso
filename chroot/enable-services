@@ -1,10 +1,10 @@
 #!/usr/bin/env fish
-# enable-services.fish
+# enable-services
 # Runs INSIDE the chroot.
-# Enables runit services listed in void-config.fish.
+# Enables runit services listed in config.
 
 set SCRIPT_DIR (dirname (status filename))
-source $SCRIPT_DIR/void-config.fish
+source $SCRIPT_DIR/config
 
 echo "=== Enabling Runit Services ==="
 echo ""

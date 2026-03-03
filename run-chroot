@@ -34,11 +34,11 @@ chmod +x $CHROOT_SCRIPT_DIR/*
 
 # ── Run scripts inside chroot ─────────────────────────────────────────────────
 echo ""
-echo ">>> Running configure-void.fish inside chroot..."
-xchroot $CHROOT /usr/bin/fish /root/void-setup/config
+echo ">>> Running apply-config inside chroot..."
+xchroot $CHROOT /usr/bin/fish /root/void-setup/apply-config
 
 echo ""
-echo ">>> Running enable-services.fish inside chroot..."
+echo ">>> Running enable-services inside chroot..."
 xchroot $CHROOT /usr/bin/fish /root/void-setup/enable-services
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────

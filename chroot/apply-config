@@ -1,10 +1,10 @@
 #!/usr/bin/env fish
-# configure-void.fish
+# apply-config
 # Runs INSIDE the chroot.
 # Configures hostname, locale, rc.conf, root password, and new user.
 
 set SCRIPT_DIR (dirname (status filename))
-source $SCRIPT_DIR/void-config.fish
+source $SCRIPT_DIR/config
 
 echo "=== Void Linux System Configuration ==="
 echo ""

@@ -1,10 +1,10 @@
 #!/usr/bin/env fish
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-# Usage: ./mount.fish <device>
+# Usage: ./mount-disk <device>
 # Examples:
-#   ./mount.fish /dev/loop0      (disk image)
-#   ./mount.fish /dev/sda        (real drive)
+#   ./mount-disk /dev/loop0      (disk image)
+#   ./mount-disk /dev/sda        (real drive)
 
 set MOUNT_ROOT /mnt
 

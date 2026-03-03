@@ -1,0 +1,34 @@
+#!/usr/bin/env fish
+# install-grub
+# Runs INSIDE the chroot.
+# Installs and configures GRUB for UEFI systems.
+
+set EFI_DIR /boot/efi
+
+echo "=== GRUB UEFI Installation ==="
+echo ""
+
+# ── Verify EFI partition is mounted ───────────────────────────────────────────
+if not mountpoint -q $EFI_DIR
+    echo "ERROR: $EFI_DIR is not mounted. Check your EFI partition."
+    exit 1
+end
+
+# ── Install grub package ───────────────────────────────────────────────────────
+echo ">>> Installing grub-x86_64-efi..."
+xbps-install -Sy grub-x86_64-efi || exit 1
+
+# ── Install GRUB to the EFI partition ─────────────────────────────────────────
+echo ">>> Running grub-install..."
+grub-install \
+    --target=x86_64-efi \
+    --efi-directory=$EFI_DIR \
+    --bootloader-id=void \
+    --recheck || exit 1
+
+# ── Generate GRUB config ───────────────────────────────────────────────────────
+echo ">>> Generating grub.cfg..."
+grub-mkconfig -o /boot/grub/grub.cfg || exit 1
+
+echo ""
+echo ">>> install-grub complete."

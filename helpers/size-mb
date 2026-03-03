@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 
 # Converts a human size (e.g. 100M, 4G, 512K) to a plain megabyte number.
-# Usage: size_to_mb.fish <size>
+# Usage: size-bm <size>
 # Output: a plain integer (e.g. 4096)
 
 if test (count $argv) -ne 1
