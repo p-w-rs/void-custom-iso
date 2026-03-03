@@ -30,6 +30,7 @@ echo "set KEYMAP      \"$KEYMAP\""     >> $CONFIG_FILE
 echo "set LOCALE      \"$LOCALE\""     >> $CONFIG_FILE
 echo "set NEW_USER    \"$NEW_USER\""   >> $CONFIG_FILE
 echo "set SERVICES    $SERVICES"       >> $CONFIG_FILE
+chmod +x $CONFIG_FILE
 
 echo ""
 echo ">>> Config saved to $CONFIG_FILE"
