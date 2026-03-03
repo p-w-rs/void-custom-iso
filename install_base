@@ -1,0 +1,39 @@
+#!/usr/bin/env fish
+
+# ── Configuration ─────────────────────────────────────────────────────────────
+set REPO            https://repo-default.voidlinux.org/current
+set ARCH            x86_64
+set MOUNT_ROOT      /mnt
+
+# Packages to ignore (will not be installed even as dependencies)
+set IGNORE_PKGS     linux linux-headers
+
+# Packages to install on top of base-system
+set PACKAGES        base-system linux-mainline linux-mainline-headers
+
+# ── 1. Copy XBPS RSA keys ──────────────────────────────────────────────────────
+echo "Copying XBPS RSA keys..."
+sudo mkdir -p $MOUNT_ROOT/var/db/xbps/keys || exit 1
+sudo cp /var/db/xbps/keys/* $MOUNT_ROOT/var/db/xbps/keys/ || exit 1
+
+# ── 2. Write ignorepkg config before installation ─────────────────────────────
+# This prevents base-system from pulling in the default linux/linux-headers
+# packages since we are using linux-mainline instead.
+echo "Writing ignorepkg config..."
+sudo mkdir -p $MOUNT_ROOT/etc/xbps.d || exit 1
+for pkg in $IGNORE_PKGS
+    echo "ignorepkg=$pkg" | sudo tee -a $MOUNT_ROOT/etc/xbps.d/10-ignore-kernel.conf
+end
+
+# ── 3. Bootstrap base installation ────────────────────────────────────────────
+echo "Installing: $PACKAGES"
+echo "Repo:       $REPO"
+echo "Arch:       $ARCH"
+echo "Target:     $MOUNT_ROOT"
+echo ""
+
+sudo env XBPS_ARCH=$ARCH xbps-install -S -r $MOUNT_ROOT -R $REPO $PACKAGES || exit 1
+
+echo ""
+echo "Done! Base system installed to $MOUNT_ROOT"
+echo "Ignored packages (will not be installed): $IGNORE_PKGS"

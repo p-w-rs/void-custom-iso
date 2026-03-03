@@ -1,0 +1,60 @@
+#!/usr/bin/env fish
+
+# ── Configuration ─────────────────────────────────────────────────────────────
+# Usage: ./mount.fish <device>
+# Examples:
+#   ./mount.fish /dev/loop0      (disk image)
+#   ./mount.fish /dev/sda        (real drive)
+
+set MOUNT_ROOT /mnt
+
+# ── Argument handling ──────────────────────────────────────────────────────────
+if test (count $argv) -ne 1
+    echo "Usage: "(status filename)" <device>"
+    echo "  e.g. "(status filename)" /dev/loop0"
+    echo "  e.g. "(status filename)" /dev/sda"
+    exit 1
+end
+
+set DEV $argv[1]
+
+# Detect partition suffix: loop devices use 'p1', disk devices use '1'
+# e.g. /dev/loop0 -> /dev/loop0p1 | /dev/sda -> /dev/sda1
+if string match -q '*loop*' $DEV
+    set PART_EFI  {$DEV}p1
+    set PART_SWAP {$DEV}p2
+    set PART_ROOT {$DEV}p3
+else
+    set PART_EFI  {$DEV}1
+    set PART_SWAP {$DEV}2
+    set PART_ROOT {$DEV}3
+end
+
+echo "Device:     $DEV"
+echo "EFI:        $PART_EFI"
+echo "Swap:       $PART_SWAP"
+echo "Root:       $PART_ROOT"
+echo "Mount root: $MOUNT_ROOT"
+echo ""
+
+# ── 1. Mount root filesystem ───────────────────────────────────────────────────
+echo "Mounting root filesystem..."
+sudo mount $PART_ROOT $MOUNT_ROOT || exit 1
+
+# ── 2. Mount EFI System Partition ─────────────────────────────────────────────
+echo "Mounting EFI partition..."
+sudo mkdir -p $MOUNT_ROOT/boot/efi || exit 1
+sudo mount $PART_EFI $MOUNT_ROOT/boot/efi || exit 1
+
+# ── 3. Enable swap ─────────────────────────────────────────────────────────────
+# Swap assumed to be pre formatted so we only need swapon here.
+echo "Enabling swap..."
+sudo swapon $PART_SWAP || exit 1
+
+echo ""
+echo "Done! Filesystems mounted under $MOUNT_ROOT"
+echo ""
+echo "To unmount when finished:"
+echo "  sudo swapoff $PART_SWAP"
+echo "  sudo umount $MOUNT_ROOT/boot/efi"
+echo "  sudo umount $MOUNT_ROOT"
