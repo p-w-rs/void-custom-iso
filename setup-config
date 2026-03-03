@@ -16,7 +16,7 @@ read -P "Locale (e.g. en_US.UTF-8): " LOCALE
 read -P "New username: " NEW_USER
 
 echo ""
-echo "Services to enable (space-separated, e.g: dhcpcd sshd dbus)"
+echo "Services to enable (space-separated, e.g: acpid chronyd dhcpcd sshd wpa_supplicant)"
 read -P "Services: " -t SERVICES
 
 echo ""
