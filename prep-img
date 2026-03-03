@@ -12,8 +12,8 @@ set SWAP_SIZE  4G
 # We start at 1M to leave room for the GPT header.
 set MATH (dirname (status filename))/helpers/size-mb
 
-set EFI_MB  (MATH $EFI_SIZE)  || exit 1
-set SWAP_MB (MATH $SWAP_SIZE) || exit 1
+set EFI_MB  ($MATH $EFI_SIZE)  || exit 1
+set SWAP_MB ($MATH $SWAP_SIZE) || exit 1
 
 set EFI_START  1M
 set EFI_END    (math "1 + $EFI_MB")M
