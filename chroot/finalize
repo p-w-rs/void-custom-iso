@@ -1,4 +1,5 @@
 #!/usr/bin/env fish
+
 # finalize
 # Runs INSIDE the chroot.
 # Reconfigures all packages so the kernel, initramfs, and

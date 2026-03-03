@@ -1,4 +1,5 @@
 #!/usr/bin/env fish
+
 # apply-config
 # Runs INSIDE the chroot.
 # Configures hostname, locale, rc.conf, root password, and new user.

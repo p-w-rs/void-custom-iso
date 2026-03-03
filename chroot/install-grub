@@ -1,4 +1,5 @@
 #!/usr/bin/env fish
+
 # install-grub
 # Runs INSIDE the chroot.
 # Installs and configures GRUB for UEFI systems.

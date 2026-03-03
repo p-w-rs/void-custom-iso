@@ -1,4 +1,5 @@
 #!/usr/bin/env fish
+
 # setup-config
 # Run on the HOST before chrooting.
 # Asks the user for all configuration values and saves them to ./chroot/config.

@@ -1,4 +1,5 @@
 #!/usr/bin/env fish
+
 # run-chroot
 # Run on the HOST after setup-config.
 # Copies scripts and config into the chroot, then runs them via xchroot.

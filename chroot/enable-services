@@ -1,4 +1,5 @@
 #!/usr/bin/env fish
+
 # enable-services
 # Runs INSIDE the chroot.
 # Enables runit services listed in config.
