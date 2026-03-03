@@ -3,6 +3,14 @@
 # install-grub
 # Runs INSIDE the chroot.
 # Installs and configures GRUB for UEFI systems.
+#
+# --removable  installs to the universal fallback path /EFI/BOOT/BOOTX64.EFI
+#              so the image boots in VMs and on real hardware without needing
+#              an NVRAM entry.
+#
+# --no-nvram   prevents grub-install from writing EFI boot entries.
+#              Without this, it writes to the HOST machine's NVRAM (via the
+#              bind-mounted efivars) and can corrupt the host's boot order.
 
 set EFI_DIR /boot/efi
 
@@ -25,6 +33,8 @@ grub-install \
     --target=x86_64-efi \
     --efi-directory=$EFI_DIR \
     --bootloader-id=void \
+    --removable \
+    --no-nvram \
     --recheck || exit 1
 
 # ── Generate GRUB config ───────────────────────────────────────────────────────

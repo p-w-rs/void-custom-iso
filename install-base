@@ -10,7 +10,7 @@ set MOUNT_ROOT      /mnt
 set IGNORE_PKGS     linux linux-headers
 
 # Packages to install on top of base-system
-set BASE_PACKAGES   base-system linux-mainline linux-mainline-headers fish-shell net-tools xtools
+set BASE_PACKAGES   base-system linux-mainline linux-mainline-headers fish-shell net-tools xtools parted
 
 # ── 1. Copy XBPS RSA keys ──────────────────────────────────────────────────────
 echo "Copying XBPS RSA keys..."
