@@ -25,7 +25,16 @@ if not (mklive_root / "mkiso.sh").exists():
 kernel = ["linux-mainline", "linux-mainline-headers"]
 ob_66 = ["66", "66-devel", "66-init", "66-tools", "66-doc"]
 shell = ["fish-shell"]
+intel = ["linux-firmware-intel", "intel-media-driver", "intel-ucode"]
 py = ["python", "uv"]
+mesa = [
+    "glu",
+    "mesa-dri",
+    "mesa-opencl",
+    "mesa-vaapi",
+    "mesa-vdpau",
+    "mesa-vulkan-intel",
+]
 rm = [
     "runit",
     "runit-void",
