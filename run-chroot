@@ -19,9 +19,18 @@ if not test -d $CHROOT/etc
     exit 1
 end
 
-# ── Generate fstab ────────────────────────────────────────────────────────────
-echo ">>> Generating fstab..."
-xgenfstab -L $CHROOT | sudo tee $CHROOT/etc/fstab
+# ── Generate fstab by label ───────────────────────────────────────────────────
+# We write fstab manually using labels rather than xgenfstab because xgenfstab
+# scans all host-mounted filesystems and bleeds in host entries (e.g. the host
+# swap). Our prep-img / prep-disk scripts always assign these exact labels, so
+# this fstab is correct for any machine the image is booted on.
+echo ">>> Writing fstab..."
+sudo tee $CHROOT/etc/fstab > /dev/null << 'EOF'
+# <file system>   <dir>      <type>   <options>          <dump>  <pass>
+LABEL=root        /          ext4     defaults,relatime  0       1
+LABEL=EFI         /boot/efi  vfat     defaults,noatime   0       2
+LABEL=swap        none       swap     sw                 0       0
+EOF
 echo "    Done."
 cat $CHROOT/etc/fstab
 
@@ -62,5 +71,7 @@ sudo rm -rf $CHROOT_SCRIPT_DIR
 
 echo ""
 echo ">>> All done. Next steps:"
-echo "    1. sudo umount -R /mnt"
-echo "    2. reboot (or detach the loop device if testing an image)"
+echo "    1. sudo swapoff LABEL=swap"
+echo "    2. sudo umount -R /mnt"
+echo "    3. sudo losetup -d <loop device>  (if using an image)"
+echo "    4. Transfer image and boot"
