@@ -11,8 +11,8 @@ mklive_root = project_root / "void-mklive"
 #  Sanity checks
 # ─────────────────────────────────────────
 
-if not (mklive_root / "mkiso.sh").exists():
-    print(f"  ERROR: {mklive_root / 'mkiso.sh'} not found.")
+if not (mklive_root / "mklive.sh").exists():
+    print(f"  ERROR: {mklive_root / 'mklive.sh'} not found.")
     print("  Make sure the void-mklive submodule is initialised:")
     print("    git submodule update --init")
     raise SystemExit(1)
@@ -35,9 +35,12 @@ mesa = [
     "mesa-vdpau",
     "mesa-vulkan-intel",
 ]
+
+# NOTE: runit-void is intentionally NOT removed here.
+# mklive.sh enables runit services (agetty-tty1, etc.) during the build
+# and requires /etc/sv/* to exist. Removing runit-void causes a build failure.
+# post-setup.py handles switching the active init to 66 after rootfs is built.
 rm = [
-    "runit",
-    "runit-void",
     "linux6.12",
     "linux6.12-headers",
     "linux6.18",
@@ -79,6 +82,7 @@ except OSError as e:
     print(f"  ERROR: Could not create output directory: {e}")
     raise SystemExit(1)
 
+
 # ─────────────────────────────────────────
 #  Build the iso
 # ─────────────────────────────────────────
@@ -97,15 +101,17 @@ cmd = [
     "-o",
     str(out_path),
     "-p",
-    str(packages),
+    packages,
     "-g",
-    str(remove),
+    remove,
     "-I",
     str(project_root / "custom-files"),
     "-x",
     "post-setup.py",
+    # Point the kernel at 66-init instead of runit.
+    # mitigations=off nowatchdog threadirqs are your perf tweaks.
     "-C",
-    "mitigations=off nowatchdog threadirqs",
+    "init=/usr/bin/66 mitigations=off nowatchdog threadirqs",
     "-v",
     "linux-mainline",
     "-k",
