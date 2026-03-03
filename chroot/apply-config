@@ -24,7 +24,8 @@ echo "TTYS=2"                     >> /etc/rc.conf
 # ── Locale ────────────────────────────────────────────────────────────────────
 echo ">>> Enabling locale: $LOCALE"
 set LOCALE_ESCAPED (string escape --style=regex $LOCALE)
-sed -i "s/^#($LOCALE_ESCAPED.*)/\1/" /etc/default/libc-locales
+# -E enables extended regex so bare (...) is a capture group, not a literal
+sed -i -E "s/^#($LOCALE_ESCAPED.*)/\1/" /etc/default/libc-locales
 
 echo ">>> Generating locale files..."
 xbps-reconfigure -f glibc-locales
@@ -52,7 +53,7 @@ passwd $NEW_USER
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
-echo ">>> configure-void complete."
+echo ">>> apply-config complete."
 echo "    Hostname : $HOSTNAME"
 echo "    Timezone : $TIMEZONE"
 echo "    Locale   : $LOCALE"

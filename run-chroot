@@ -1,6 +1,6 @@
 #!/usr/bin/env fish
-# run-chroot-scripts.fish
-# Run on the HOST after setup-config.fish.
+# run-chroot
+# Run on the HOST after setup-config.
 # Copies scripts and config into the chroot, then runs them via xchroot.
 
 set CHROOT /mnt
@@ -20,33 +20,46 @@ end
 
 # ── Generate fstab ────────────────────────────────────────────────────────────
 echo ">>> Generating fstab..."
-xgenfstab -U $CHROOT > $CHROOT/etc/fstab
+xgenfstab -U $CHROOT | sudo tee $CHROOT/etc/fstab
 echo "    Done."
 cat $CHROOT/etc/fstab
 
 # ── Copy scripts and config into chroot ───────────────────────────────────────
 echo ">>> Copying scripts into chroot at $CHROOT_SCRIPT_DIR..."
-mkdir -p $CHROOT_SCRIPT_DIR
-cp $SCRIPT_DIR/config    $CHROOT_SCRIPT_DIR/
-cp $SCRIPT_DIR/apply-config $CHROOT_SCRIPT_DIR/
-cp $SCRIPT_DIR/enable-services $CHROOT_SCRIPT_DIR/
-chmod +x $CHROOT_SCRIPT_DIR/*
+sudo mkdir -p $CHROOT_SCRIPT_DIR
+sudo cp $SCRIPT_DIR/config          $CHROOT_SCRIPT_DIR/
+sudo cp $SCRIPT_DIR/apply-config    $CHROOT_SCRIPT_DIR/
+sudo cp $SCRIPT_DIR/enable-services $CHROOT_SCRIPT_DIR/
+sudo cp $SCRIPT_DIR/install-grub    $CHROOT_SCRIPT_DIR/
+sudo cp $SCRIPT_DIR/finalize        $CHROOT_SCRIPT_DIR/
+sudo chmod +x $CHROOT_SCRIPT_DIR/apply-config \
+              $CHROOT_SCRIPT_DIR/enable-services \
+              $CHROOT_SCRIPT_DIR/install-grub \
+              $CHROOT_SCRIPT_DIR/finalize
 
 # ── Run scripts inside chroot ─────────────────────────────────────────────────
 echo ""
 echo ">>> Running apply-config inside chroot..."
-xchroot $CHROOT /usr/bin/fish /root/void-setup/apply-config
+xchroot $CHROOT /usr/bin/fish /root/void-setup/apply-config || exit 1
 
 echo ""
 echo ">>> Running enable-services inside chroot..."
-xchroot $CHROOT /usr/bin/fish /root/void-setup/enable-services
+xchroot $CHROOT /usr/bin/fish /root/void-setup/enable-services || exit 1
+
+echo ""
+echo ">>> Running install-grub inside chroot..."
+xchroot $CHROOT /usr/bin/fish /root/void-setup/install-grub || exit 1
+
+echo ""
+echo ">>> Running finalize inside chroot..."
+xchroot $CHROOT /usr/bin/fish /root/void-setup/finalize || exit 1
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 echo ""
 echo ">>> Cleaning up scripts from chroot..."
-rm -rf $CHROOT_SCRIPT_DIR
+sudo rm -rf $CHROOT_SCRIPT_DIR
 
 echo ""
 echo ">>> All done. Next steps:"
-echo "    1. umount -R /mnt"
-echo "    2. reboot"
+echo "    1. sudo umount -R /mnt"
+echo "    2. reboot (or detach the loop device if testing an image)"
