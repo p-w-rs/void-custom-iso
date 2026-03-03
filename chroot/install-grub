@@ -23,10 +23,6 @@ if not mountpoint -q $EFI_DIR
     exit 1
 end
 
-# ── Install grub package ───────────────────────────────────────────────────────
-echo ">>> Installing grub-x86_64-efi..."
-xbps-install -Sy grub-x86_64-efi || exit 1
-
 # ── Install GRUB to the EFI partition ─────────────────────────────────────────
 echo ">>> Running grub-install..."
 grub-install \

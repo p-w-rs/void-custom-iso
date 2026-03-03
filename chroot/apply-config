@@ -23,10 +23,6 @@ echo "FONT=\"lat9w-16\""          >> /etc/rc.conf
 echo "TTYS=2"                     >> /etc/rc.conf
 
 # ── Locale ────────────────────────────────────────────────────────────────────
-# glibc-locales is not part of base-system; install it before reconfiguring.
-echo ">>> Installing glibc-locales..."
-xbps-install -Sy glibc-locales || exit 1
-
 echo ">>> Enabling locale: $LOCALE"
 set LOCALE_ESCAPED (string escape --style=regex $LOCALE)
 # -E enables extended regex so bare (...) is a capture group, not a literal
@@ -36,9 +32,6 @@ echo ">>> Generating locale files..."
 xbps-reconfigure -f glibc-locales || exit 1
 
 # ── sudo ──────────────────────────────────────────────────────────────────────
-echo ">>> Installing sudo..."
-xbps-install -Sy sudo || exit 1
-
 echo ">>> Granting wheel group sudo access..."
 echo "%wheel ALL=(ALL:ALL) ALL" > /etc/sudoers.d/wheel
 chmod 440 /etc/sudoers.d/wheel
