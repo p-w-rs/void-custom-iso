@@ -26,7 +26,14 @@ kernel = ["linux-mainline", "linux-mainline-headers"]
 ob_66 = ["66", "66-devel", "66-init", "66-tools", "66-doc"]
 shell = ["fish-shell"]
 py = ["python", "uv"]
-rm = ["runit", "linux6.12", "linux6.12-headers", "linux6.18", "linux6.18-headers"]
+rm = [
+    "runit",
+    "runit-void",
+    "linux6.12",
+    "linux6.12-headers",
+    "linux6.18",
+    "linux6.18-headers",
+]
 
 packages = " ".join(set([*kernel, *ob_66, *shell, *py]))
 remove = " ".join(rm)
