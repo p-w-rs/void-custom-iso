@@ -12,7 +12,7 @@ echo ""
 
 for svc in $SERVICES
     if test -d /etc/sv/$svc
-        ln -sf /etc/sv/$svc /var/service/
+        ln -sf /etc/sv/$svc /var/service
         echo "    [ENABLED] $svc"
     else
         echo "    [SKIPPED] $svc (not found in /etc/sv)"
