@@ -10,10 +10,15 @@ set MOUNT_ROOT      /mnt
 set IGNORE_PKGS     linux linux-headers
 
 # Packages to install with base-system
-set BASE_PACKAGES   base-system linux-mainline linux-mainline-headers void-repo-nonfree \
+set PACKAGES        base-system linux-mainline linux-mainline-headers void-repo-nonfree \
                     linux-firmware linux-firmware-dvb linux-firmware-intel linux-firmware-network linux-firmware-nvidia \
                     sudo acpi chrony dhcpcd wpa_supplicant openssh nftables runit-nftables dbus bluez \
                     fish-shell net-tools xtools parted grub-x86_64-efi glibc-locales
+
+# Add all packages from file in the packages dir
+for file in packages/*
+    test -f "$file" -a -r "$file"; and source "$file"
+end
 
 # ── 1. Copy XBPS RSA keys ──────────────────────────────────────────────────────
 echo "Copying XBPS RSA keys..."
@@ -28,13 +33,13 @@ for pkg in $IGNORE_PKGS
 end
 
 # ── 3. Bootstrap base installation ────────────────────────────────────────────
-echo "Installing: $BASE_PACKAGES"
+echo "Installing: $PACKAGES"
 echo "Repos:      $REPO_MAIN $REPO_NONFREE"
 echo "Arch:       $ARCH"
 echo "Target:     $MOUNT_ROOT"
 echo ""
 
-sudo env XBPS_ARCH=$ARCH xbps-install -Su -R $REPO_MAIN -R $REPO_NONFREE -r $MOUNT_ROOT $BASE_PACKAGES || exit 1
+sudo env XBPS_ARCH=$ARCH xbps-install -Su -R $REPO_MAIN -R $REPO_NONFREE -r $MOUNT_ROOT $PACKAGES || exit 1
 
 echo ""
 echo "Done! Base system installed to $MOUNT_ROOT"

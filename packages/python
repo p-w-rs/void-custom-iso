@@ -1,0 +1,2 @@
+set PY       uv python
+set PACKAGES (printf '%s\n' $PACKAGES $SOMENAME | sort -u | tr '\n' ' ')
