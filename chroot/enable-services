@@ -25,7 +25,7 @@ end
 
 echo ""
 echo ">>> Enabled services:"
-ls -1 /var/service/
+ls -1 /etc/runit/runsvdir/default/
 
 echo ""
 echo ">>> enable-services complete."
