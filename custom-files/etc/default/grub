@@ -5,7 +5,6 @@
 # How long to show the menu before auto-booting (seconds). Set to 0 to skip,
 # or -1 to wait indefinitely.
 GRUB_TIMEOUT=0
-GRUB_DISABLE_RECOVERY=true
 
 # Skip probing for other OSes on other disks (saves a second or two).
 GRUB_DISABLE_OS_PROBER=true
