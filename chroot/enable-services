@@ -2,30 +2,26 @@
 
 # enable-services
 # Runs INSIDE the chroot.
-# Enables runit services listed in config.
+# Reads /etc/void-install/services and symlinks each into runit.
 
-set SCRIPT_DIR (dirname (status filename))
-source $SCRIPT_DIR/config
+set SERVICES_FILE /etc/void-install/services
+
+if not test -f $SERVICES_FILE
+    echo "ERROR: $SERVICES_FILE not found."
+    exit 1
+end
 
 echo "=== Enabling Runit Services ==="
 echo ""
 
-for svc in $SERVICES
+for svc in (grep -v '^\s*#' $SERVICES_FILE | grep -v '^\s*$')
     if test -d /etc/sv/$svc
         ln -sf /etc/sv/$svc /etc/runit/runsvdir/default/
-        if test -L /etc/runit/runsvdir/default/$svc
-            echo "    [ENABLED] $svc"
-        else
-            echo "    [FAILED]  $svc (ln succeeded but symlink not found)"
-        end
+        echo "    [ENABLED] $svc"
     else
         echo "    [SKIPPED] $svc (not found in /etc/sv)"
     end
 end
-
-echo ""
-echo ">>> Enabled services:"
-ls -1 /etc/runit/runsvdir/default/
 
 echo ""
 echo ">>> enable-services complete."

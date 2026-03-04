@@ -2,75 +2,50 @@
 
 # apply-config
 # Runs INSIDE the chroot.
-# Configures hostname, locale, rc.conf, root password, and new user.
-
-set SCRIPT_DIR (dirname (status filename))
-source $SCRIPT_DIR/config
+# All static config files have already been copied in by run-chroot.
+# This script only handles what cannot be a static file:
+#   - locale compilation (xbps-reconfigure must run inside chroot)
+#   - permission hardening on sensitive files
+#   - admin user creation and password prompts
 
 echo "=== Void Linux System Configuration ==="
 echo ""
 
-# ── Hostname ──────────────────────────────────────────────────────────────────
-echo ">>> Setting hostname: $HOSTNAME"
-echo $HOSTNAME > /etc/hostname
-
-# ── rc.conf ───────────────────────────────────────────────────────────────────
-echo ">>> Writing /etc/rc.conf..."
-echo "TIMEZONE=\"$TIMEZONE\""     >  /etc/rc.conf
-echo "HARDWARECLOCK=\"UTC\""      >> /etc/rc.conf
-echo "KEYMAP=\"$KEYMAP\""         >> /etc/rc.conf
-echo "FONT=\"lat9w-16\""          >> /etc/rc.conf
-echo "TTYS=2"                     >> /etc/rc.conf
-
-# ── Locale ────────────────────────────────────────────────────────────────────
-echo ">>> Enabling locale: $LOCALE"
-set LOCALE_ESCAPED (string escape --style=regex $LOCALE)
-sed -i -E "s/^#($LOCALE_ESCAPED.*)/\1/" /etc/default/libc-locales
-
+# ── Locale ─────────────────────────────────────────────────────────────────────
+# /etc/default/libc-locales is already pre-edited with the correct locale
+# uncommented (copied from custom-files). Just compile the locale files.
 echo ">>> Generating locale files..."
 xbps-reconfigure -f glibc-locales || exit 1
 
-# ── sudo ──────────────────────────────────────────────────────────────────────
-echo ">>> Granting wheel group sudo access..."
-echo "%wheel ALL=(ALL) ALL" > /etc/sudoers.d/wheel
+# ── Permission hardening ───────────────────────────────────────────────────────
+# These files must have exact permissions — enforce after the cp
+echo ">>> Hardening file permissions..."
 chmod 440 /etc/sudoers.d/wheel
-
-# ── wpa_supplicant stub config ────────────────────────────────────────────────
-# Creates a minimal valid config so the service starts cleanly on any hardware.
-# Add networks after first boot with: wpa_passphrase SSID PASS >> /etc/wpa_supplicant/wpa_supplicant.conf
-echo ">>> Writing wpa_supplicant stub config..."
-mkdir -p /etc/wpa_supplicant
-if not test -f /etc/wpa_supplicant/wpa_supplicant.conf
-    echo "ctrl_interface=/var/run/wpa_supplicant" >  /etc/wpa_supplicant/wpa_supplicant.conf
-    echo "update_config=1"                        >> /etc/wpa_supplicant/wpa_supplicant.conf
-    echo "eapol_version=1"                        >> /etc/wpa_supplicant/wpa_supplicant.conf
-    echo "ap_scan=1"                              >> /etc/wpa_supplicant/wpa_supplicant.conf
-    echo "fast_reauth=1"                          >> /etc/wpa_supplicant/wpa_supplicant.conf
-end
+chmod 600 /etc/nftables.conf
 chmod 600 /etc/wpa_supplicant/wpa_supplicant.conf
 
-# ── Root password ─────────────────────────────────────────────────────────────
+# ── Root password ──────────────────────────────────────────────────────────────
 echo ""
 echo ">>> Set the ROOT password:"
-passwd root
+passwd root || exit 1
 
-# ── New user ──────────────────────────────────────────────────────────────────
+# ── Admin user ─────────────────────────────────────────────────────────────────
+# useradd picks up SHELL and GROUPS from /etc/default/useradd automatically.
+# wheel is added explicitly here — it is intentionally absent from the defaults
+# so that future users created with 'useradd -m <name>' do not get sudo.
 echo ""
-echo ">>> Creating user: $NEW_USER"
-# Groups included: all groups that grant useful hardware/system access
-# Groups excluded: root, kmem (raw memory), tape, daemon, utmp, adm, mail,
-#                  nogroup, usbmon, tty, bin, sys (historical/security risk)
-useradd -m -G wheel,audio,video,cdrom,optical,kvm,xbuilder,bluetooth,network,storage,scanner,plugdev,input,users,dialout,lp,floppy,disk -s /usr/bin/fish $NEW_USER
+echo ">>> Enter admin username: "
+read ADMIN_USER
 
-echo ">>> Set password for $NEW_USER:"
-passwd $NEW_USER
+echo ">>> Creating admin user: $ADMIN_USER"
+useradd -m -G wheel $ADMIN_USER || exit 1
 
-# ── Summary ───────────────────────────────────────────────────────────────────
+echo ">>> Set password for $ADMIN_USER:"
+passwd $ADMIN_USER || exit 1
+
+# ── Summary ────────────────────────────────────────────────────────────────────
 echo ""
 echo ">>> apply-config complete."
-echo "    Hostname : $HOSTNAME"
-echo "    Timezone : $TIMEZONE"
-echo "    Locale   : $LOCALE"
-echo "    User     : $NEW_USER"
-echo "    Groups   : wheel audio video cdrom optical kvm xbuilder bluetooth"
-echo "               network storage scanner plugdev input users dialout lp floppy disk"
+echo "    Hostname : "(cat /etc/hostname)
+echo "    Timezone : "(grep ^TIMEZONE /etc/rc.conf | cut -d'"' -f2)
+echo "    User     : $ADMIN_USER (+ wheel)"

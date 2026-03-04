@@ -1,0 +1,22 @@
+# /etc/ssh/sshd_config — default OpenSSH server configuration
+# This is the Void Linux default. Uncomment and modify as needed.
+# After changes: sv restart sshd
+
+# ── Network ──────────────────────────────────────────────────────────────────
+#Port 22
+#ListenAddress 0.0.0.0
+#ListenAddress ::
+
+# ── Authentication ────────────────────────────────────────────────────────────
+#PermitRootLogin prohibit-password
+#PubkeyAuthentication yes
+#AuthorizedKeysFile .ssh/authorized_keys
+#PasswordAuthentication yes
+#PermitEmptyPasswords no
+
+# ── Session ───────────────────────────────────────────────────────────────────
+#X11Forwarding no
+#PrintMotd yes
+
+# ── Subsystems ────────────────────────────────────────────────────────────────
+Subsystem sftp /usr/lib/ssh/sftp-server

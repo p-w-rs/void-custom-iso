@@ -1,0 +1,7 @@
+# /etc/default/useradd — default settings for new users
+# These apply when running: useradd -m <username>
+# The admin user created at install time uses these too,
+# but is additionally added to wheel (sudo) explicitly.
+
+SHELL=/usr/bin/fish
+GROUPS=audio,video,network,storage,plugdev,input,users

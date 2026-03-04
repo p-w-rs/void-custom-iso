@@ -1,16 +1,16 @@
 #!/usr/bin/env fish
 
 # run-chroot
-# Run on the HOST after setup-config.
-# Copies scripts and config into the chroot, then runs them via xchroot.
+# Run on the HOST after editing custom-files/.
+# Copies custom-files into the target, then runs chroot scripts.
 #
 # Usage:
 #   sudo fish run-chroot              → internal drive install (default)
 #   sudo fish run-chroot --removable  → USB / portable image install
 
+set ROOT   (dirname (status filename))
 set CHROOT /mnt
-set SCRIPT_DIR (dirname (status filename))/chroot
-set CHROOT_SCRIPT_DIR $CHROOT/root/void-setup
+set CHROOT_WORK $CHROOT/root/void-setup
 
 # ── Parse arguments ────────────────────────────────────────────────────────────
 set GRUB_FLAGS
@@ -19,40 +19,54 @@ if contains -- --removable $argv
     set GRUB_FLAGS --removable
 end
 
-# ── Preflight checks ──────────────────────────────────────────────────────────
-if not test -f $SCRIPT_DIR/config
-    echo "ERROR: config file not found. Run setup-config first."
-    exit 1
-end
-
+# ── Preflight checks ───────────────────────────────────────────────────────────
 if not test -d $CHROOT/etc
     echo "ERROR: $CHROOT does not look like a mounted Void installation."
     exit 1
 end
 
-# ── Generate fstab by label ───────────────────────────────────────────────────
-echo ">>> Writing fstab..."
-printf "# <file system>   <dir>      <type>   <options>          <dump>  <pass>\n" | sudo tee    $CHROOT/etc/fstab > /dev/null
-printf "LABEL=root        /          ext4     defaults,relatime  0       1\n"       | sudo tee -a $CHROOT/etc/fstab > /dev/null
-printf "LABEL=EFI         /boot/efi  vfat     defaults,noatime   0       2\n"       | sudo tee -a $CHROOT/etc/fstab > /dev/null
-printf "LABEL=swap        none       swap     sw                 0       0\n"       | sudo tee -a $CHROOT/etc/fstab > /dev/null
+for f in \
+    $ROOT/custom-files/etc/fstab \
+    $ROOT/custom-files/etc/hostname \
+    $ROOT/custom-files/etc/rc.conf \
+    $ROOT/custom-files/etc/nftables.conf \
+    $ROOT/custom-files/etc/default/useradd \
+    $ROOT/custom-files/etc/default/libc-locales \
+    $ROOT/custom-files/etc/sudoers.d/wheel \
+    $ROOT/custom-files/etc/wpa_supplicant/wpa_supplicant.conf \
+    $ROOT/custom-files/etc/ssh/sshd_config \
+    $ROOT/custom-files/etc/chrony.conf \
+    $ROOT/custom-files/etc/void-install/services
+
+    if not test -f $f
+        echo "ERROR: missing expected custom file: $f"
+        exit 1
+    end
+end
+
+# ── Copy custom-files into chroot ─────────────────────────────────────────────
+# Mirrors the directory tree verbatim into the target, preserving symlinks.
+# Service symlinks under etc/runit/runsvdir/default/ are included automatically.
+echo ""
+echo ">>> Copying custom-files into chroot..."
+sudo cp -rv $ROOT/custom-files/. $CHROOT/
 echo "    Done."
-cat $CHROOT/etc/fstab
 
-# ── Copy scripts and config into chroot ───────────────────────────────────────
-echo ">>> Copying scripts into chroot at $CHROOT_SCRIPT_DIR..."
-sudo mkdir -p $CHROOT_SCRIPT_DIR
-sudo cp $SCRIPT_DIR/config          $CHROOT_SCRIPT_DIR/
-sudo cp $SCRIPT_DIR/apply-config    $CHROOT_SCRIPT_DIR/
-sudo cp $SCRIPT_DIR/enable-services $CHROOT_SCRIPT_DIR/
-sudo cp $SCRIPT_DIR/install-grub    $CHROOT_SCRIPT_DIR/
-sudo cp $SCRIPT_DIR/finalize        $CHROOT_SCRIPT_DIR/
-sudo chmod +x $CHROOT_SCRIPT_DIR/apply-config \
-              $CHROOT_SCRIPT_DIR/enable-services \
-              $CHROOT_SCRIPT_DIR/install-grub \
-              $CHROOT_SCRIPT_DIR/finalize
+# ── Copy chroot scripts into chroot ───────────────────────────────────────────
+echo ""
+echo ">>> Copying chroot scripts to $CHROOT_WORK..."
+sudo mkdir -p $CHROOT_WORK
+sudo cp $ROOT/chroot/apply-config    $CHROOT_WORK/
+sudo cp $ROOT/chroot/enable-services $CHROOT_WORK/
+sudo cp $ROOT/chroot/install-grub    $CHROOT_WORK/
+sudo cp $ROOT/chroot/finalize        $CHROOT_WORK/
+sudo chmod +x \
+    $CHROOT_WORK/apply-config \
+    $CHROOT_WORK/enable-services \
+    $CHROOT_WORK/install-grub \
+    $CHROOT_WORK/finalize
 
-# ── Run scripts inside chroot ─────────────────────────────────────────────────
+# ── Run scripts inside chroot ──────────────────────────────────────────────────
 echo ""
 echo ">>> Running apply-config inside chroot..."
 xchroot $CHROOT /usr/bin/fish /root/void-setup/apply-config || exit 1
@@ -69,10 +83,10 @@ echo ""
 echo ">>> Running finalize inside chroot..."
 xchroot $CHROOT /usr/bin/fish /root/void-setup/finalize || exit 1
 
-# ── Cleanup ───────────────────────────────────────────────────────────────────
+# ── Cleanup ────────────────────────────────────────────────────────────────────
 echo ""
 echo ">>> Cleaning up scripts from chroot..."
-sudo rm -rf $CHROOT_SCRIPT_DIR
+sudo rm -rf $CHROOT_WORK
 
 echo ""
 echo ">>> All done. Next steps:"

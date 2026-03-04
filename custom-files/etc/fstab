@@ -1,0 +1,6 @@
+# /etc/fstab
+# Uses filesystem labels set during partitioning (prep-img / prep-disk).
+# <file system>   <dir>      <type>   <options>          <dump>  <pass>
+LABEL=root        /          ext4     defaults,relatime  0       1
+LABEL=EFI         /boot/efi  vfat     defaults,noatime   0       2
+LABEL=swap        none       swap     sw                 0       0

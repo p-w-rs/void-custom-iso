@@ -7,13 +7,14 @@ set ARCH            x86_64
 set MOUNT_ROOT      /mnt
 
 # Packages to ignore (will not be installed even as dependencies)
-set IGNORE_PKGS     linux linux-headers
+set IGNORE_PKGS     linux linux-headers iptables ip6tables
 
 # Packages to install with base-system
 set BASE_PACKAGES   base-system linux-mainline linux-mainline-headers \
                     linux-firmware linux-firmware-dvb linux-firmware-intel linux-firmware-network linux-firmware-nvidia \
                     sudo acpi chrony dhcpcd openssh wpa_supplicant dbus bluez \
-                    fish-shell nerd-fonts net-tools xtools parted grub-x86_64-efi glibc-locales
+                    nftables runit-nftables \
+                    fish-shell net-tools xtools parted grub-x86_64-efi glibc-locales
 
 # ── 1. Copy XBPS RSA keys ──────────────────────────────────────────────────────
 echo "Copying XBPS RSA keys..."
@@ -24,7 +25,7 @@ sudo cp /var/db/xbps/keys/* $MOUNT_ROOT/var/db/xbps/keys/ || exit 1
 echo "Writing ignorepkg config..."
 sudo mkdir -p $MOUNT_ROOT/etc/xbps.d || exit 1
 for pkg in $IGNORE_PKGS
-    echo "ignorepkg=$pkg" | sudo tee -a $MOUNT_ROOT/etc/xbps.d/10-ignore-kernel.conf
+    echo "ignorepkg=$pkg" | sudo tee -a $MOUNT_ROOT/etc/xbps.d/10-ignore.conf
 end
 
 # ── 3. Bootstrap base installation ────────────────────────────────────────────
@@ -38,4 +39,4 @@ sudo env XBPS_ARCH=$ARCH xbps-install -S -R $REPO_MAIN -R $REPO_NONFREE -r $MOUN
 
 echo ""
 echo "Done! Base system installed to $MOUNT_ROOT"
-echo "Ignored packages (will not be installed): $IGNORE_PKGS"
+echo "Ignored packages: $IGNORE_PKGS"

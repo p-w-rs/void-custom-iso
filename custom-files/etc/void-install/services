@@ -1,0 +1,13 @@
+# Services to enable at boot.
+# One service name per line. Lines starting with # are ignored.
+# Each name must match a directory under /etc/sv/.
+# See: https://docs.voidlinux.org/config/services/index.html
+
+acpid
+chronyd
+dhcpcd
+sshd
+wpa_supplicant
+dbus
+bluetoothd
+nftables
