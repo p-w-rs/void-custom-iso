@@ -5,7 +5,7 @@
 set IMG_FILE   void.img
 set IMG_SIZE   32G
 set EFI_SIZE   100M
-set SWAP_SIZE  1G
+set SWAP_SIZE  8G
 
 # ── Derived values ─────────────────────────────────────────────────────────────
 # Convert sizes to plain MB, then stack them to get absolute parted positions.
