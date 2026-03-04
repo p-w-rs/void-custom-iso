@@ -4,4 +4,4 @@
 # but is additionally added to wheel (sudo) explicitly.
 
 SHELL=/usr/bin/fish
-GROUPS=audio,video,network,storage,plugdev,input,users,bluetooth
+GROUPS=audio,video,cdrom,optical,lp,scanner,network,storage,plugdev,input,dialout,users,bluetooth
