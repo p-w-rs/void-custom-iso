@@ -7,13 +7,13 @@ set ARCH            x86_64
 set MOUNT_ROOT      /mnt
 
 # Packages to ignore (will not be installed even as dependencies)
-set IGNORE_PKGS     linux linux-headers iptables ip6tables
+set IGNORE_PKGS     linux linux-headers
 
 # Packages to install with base-system
 set BASE_PACKAGES   base-system linux-mainline linux-mainline-headers \
                     linux-firmware linux-firmware-dvb linux-firmware-intel linux-firmware-network linux-firmware-nvidia \
                     sudo acpi chrony dhcpcd openssh wpa_supplicant dbus bluez \
-                    nftables iptables-nft runit-nftables \
+                    nftables runit-nftables \
                     fish-shell net-tools xtools parted grub-x86_64-efi glibc-locales
 
 # ── 1. Copy XBPS RSA keys ──────────────────────────────────────────────────────
