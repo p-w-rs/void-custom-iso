@@ -7,10 +7,10 @@ set ARCH            x86_64
 set MOUNT_ROOT      /mnt
 
 # Packages to ignore (will not be installed even as dependencies)
-set IGNORE_PKGS     linux linux-headers iptables ip6tables
+set IGNORE_PKGS     linux linux-headers runit-iptables
 
 # Packages to install with base-system
-set BASE_PACKAGES   base-system linux-mainline linux-mainline-headers \
+set BASE_PACKAGES   base-system linux-mainline linux-mainline-headers void-repo-nonfree \
                     linux-firmware linux-firmware-dvb linux-firmware-intel linux-firmware-network linux-firmware-nvidia \
                     sudo acpi chrony dhcpcd openssh wpa_supplicant dbus bluez \
                     nftables runit-nftables \
