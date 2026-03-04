@@ -36,6 +36,8 @@ for f in \
     $ROOT/custom-files/etc/wpa_supplicant/wpa_supplicant.conf \
     $ROOT/custom-files/etc/ssh/sshd_config \
     $ROOT/custom-files/etc/chrony.conf \
+    $ROOT/custom-files/etc/default/apparmor \
+    $ROOT/custom-files/etc/default/grub \
     $ROOT/custom-files/etc/void-install/services
 
     if not test -f $f

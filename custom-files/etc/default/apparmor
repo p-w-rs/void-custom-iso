@@ -1,0 +1,3 @@
+# AppArmor boot mode: disable | complain | enforce
+# Start with complain (log-only, no blocking) until you've tuned profiles.
+APPARMOR=complain

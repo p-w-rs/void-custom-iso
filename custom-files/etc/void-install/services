@@ -11,3 +11,4 @@ wpa_supplicant
 dbus
 bluetoothd
 nftables
+apparmor

@@ -1,0 +1,35 @@
+# /etc/default/grub
+# Read by grub-mkconfig when install-grub runs grub-mkconfig -o /boot/grub/grub.cfg
+
+# ── Boot menu ─────────────────────────────────────────────────────────────────
+# How long to show the menu before auto-booting (seconds). Set to 0 to skip,
+# or -1 to wait indefinitely.
+GRUB_TIMEOUT=0
+
+# Skip probing for other OSes on other disks (saves a second or two).
+GRUB_DISABLE_OS_PROBER=true
+
+# ── Kernel command line ───────────────────────────────────────────────────────
+# AppArmor
+#   apparmor=1 security=apparmor  — activate AppArmor LSM at boot
+#
+# Performance / latency
+#   mitigations=off               — disable CPU vuln mitigations (Spectre etc.)
+#   nowatchdog                    — disable hardware watchdog
+#   threadirqs                    — force interrupt handlers onto threads
+#
+# Boot speed
+#   quiet                         — suppress kernel log spam during boot
+#   udev.log_level=3              — only show errors from udev (not every device event)
+#   elevator=none                 — skip legacy I/O scheduler; let the kernel's
+#                                   per-queue default handle it (best for NVMe/SSD)
+#   pcie_aspm=off                 — disable PCIe power saving negotiation at boot
+#                                   (removes a stall on some hardware)
+GRUB_CMDLINE_LINUX_DEFAULT="apparmor=1 security=apparmor mitigations=off nowatchdog threadirqs quiet udev.log_level=3 elevator=none pcie_aspm=off"
+
+# ── Platform ──────────────────────────────────────────────────────────────────
+GRUB_PLATFORM=efi
+
+# ── Appearance ────────────────────────────────────────────────────────────────
+GRUB_TERMINAL_INPUT=console
+GRUB_TERMINAL_OUTPUT=console
