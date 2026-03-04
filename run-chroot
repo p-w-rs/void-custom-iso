@@ -39,22 +39,11 @@ for f in \
     $ROOT/custom-files/etc/default/apparmor \
     $ROOT/custom-files/etc/default/grub \
     $ROOT/custom-files/etc/void-install/services \
-    $ROOT/custom-files/etc/sv/mlterm-tty1/run \
-    $ROOT/custom-files/etc/mlterm/main \
-    $ROOT/custom-files/etc/mlterm/color
 
     if not test -f $f
         echo "ERROR: missing expected custom file: $f"
         exit 1
     end
-end
-
-# Warn if the mlterm source submodule hasn't been populated
-if not test -f $ROOT/custom-files/opt/mlterm/configure \
-        -a -f $ROOT/custom-files/opt/mlterm/Makefile.in
-    echo "WARNING: custom-files/opt/mlterm does not look like a populated submodule."
-    echo "         Run: git submodule update --init custom-files/opt/mlterm"
-    echo "         mlterm-fb will not build without the source tree."
 end
 
 # ── Copy custom-files into chroot ─────────────────────────────────────────────
@@ -90,17 +79,6 @@ xchroot $CHROOT /usr/bin/fish /root/void-setup/apply-config || exit 1
 echo ""
 echo ">>> Running enable-services inside chroot..."
 xchroot $CHROOT /usr/bin/fish /root/void-setup/enable-services || exit 1
-
-# Disable the default agetty-tty1 — mlterm-tty1 takes over tty1 instead.
-# base-system post-install may have symlinked it; remove it if present.
-echo ""
-echo ">>> Replacing agetty-tty1 with mlterm-tty1 on tty1..."
-sudo rm -f $CHROOT/etc/runit/runsvdir/default/agetty-tty1
-echo "    agetty-tty1 removed (mlterm-tty1 already enabled via enable-services)."
-
-echo ""
-echo ">>> Building mlterm-fb inside chroot (this will take a few minutes)..."
-xchroot $CHROOT /usr/bin/fish /root/void-setup/build-mlterm || exit 1
 
 echo ""
 echo ">>> Running install-grub inside chroot..."

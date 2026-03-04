@@ -13,7 +13,7 @@ set IGNORE_PKGS     linux linux-headers
 set PACKAGES        base-system linux-mainline linux-mainline-headers void-repo-nonfree \
                     linux-firmware linux-firmware-dvb linux-firmware-intel linux-firmware-network linux-firmware-nvidia \
                     acpi chrony dhcpcd wpa_supplicant openssh nftables runit-nftables apparmor dbus bluez \
-                    sudo fish-shell net-tools xtools parted grub-x86_64-efi glibc-locales
+                    sudo fish-shell nerd-fonts net-tools xtools parted grub-x86_64-efi glibc-locales
 
 # Add all packages from file in the packages dir
 for file in packages/*
