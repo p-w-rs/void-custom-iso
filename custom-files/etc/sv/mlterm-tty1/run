@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# mlterm-tty1 runit service
+# Runs mlterm-fb on tty1 as the primary console terminal.
+# mlterm-fb owns /dev/tty1 and /dev/fb0 directly — no getty wrapper needed.
+# It presents /bin/login so the user authenticates normally.
+#
+# Environment:
+#   TERM is set to mlterm so ncurses and other tools get the right terminfo.
+#   LC_ALL ensures UTF-8 is active so mlterm's multilingual rendering works.
+#
+# If mlterm-fb exits (crash, user logout, etc.) runit restarts it immediately,
+# giving the same "respawn" behaviour as a normal getty.
+
+exec /usr/local/bin/mlterm-fb \
+    --fg=tty1 \
+    --lsp=2 \
+    -e /bin/login

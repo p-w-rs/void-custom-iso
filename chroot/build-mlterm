@@ -1,0 +1,79 @@
+#!/usr/bin/env fish
+
+# build-mlterm
+# Runs INSIDE the chroot.
+# Builds mlterm-fb from source in /opt/mlterm and installs it system-wide.
+# mlterm-fb is a full-featured framebuffer terminal with sixel graphics,
+# freetype/fontconfig font rendering, and multi-lingual support.
+#
+# The source tree must already exist at /opt/mlterm (copied from custom-files
+# by run-chroot via the submodule at custom-files/opt/mlterm).
+
+set SRC    /opt/mlterm
+set PREFIX /usr/local
+
+echo "=== Building mlterm-fb ==="
+echo ""
+
+# ── Sanity check ──────────────────────────────────────────────────────────────
+if not test -f $SRC/configure
+    # Try autoreconf if the configure script hasn't been generated yet
+    echo ">>> configure not found — running autoreconf..."
+    cd $SRC
+    autoreconf -fi || exit 1
+end
+
+# ── Configure ─────────────────────────────────────────────────────────────────
+# --with-gui=fb          build the framebuffer binary (mlterm-fb)
+# --disable-xlib         no X11 dependency
+# --prefix=/usr/local    system-wide install outside of xbps management
+# --enable-vt52          extra terminal compat
+# --disable-ssh2         no SSH tunnelling (keep it lean; use external ssh)
+# --disable-iiimf        no legacy IIIMF input method
+# --disable-uim          no uim (not installed)
+# --disable-scim         no SCIM (not installed)
+# --disable-m17nlib      no m17n library (not installed)
+# sixel/image support is ON by default (do NOT pass --disable-image)
+# fontconfig is ON by default for framebuffer builds when available
+
+echo ">>> Configuring (framebuffer target, sixel enabled)..."
+cd $SRC
+./configure \
+    --prefix=$PREFIX \
+    --with-gui=fb \
+    --disable-xlib \
+    --enable-vt52 \
+    --disable-ssh2 \
+    --disable-iiimf \
+    --disable-uim \
+    --disable-scim \
+    --disable-m17nlib \
+    --disable-ibus \
+    --disable-fcitx \
+    --disable-canna \
+    --disable-wnn \
+    --disable-skk \
+    || exit 1
+
+# ── Build ─────────────────────────────────────────────────────────────────────
+echo ""
+echo ">>> Compiling..."
+make -j(nproc) || exit 1
+
+# ── Install ───────────────────────────────────────────────────────────────────
+echo ""
+echo ">>> Installing to $PREFIX..."
+make install || exit 1
+
+# ── Verify ────────────────────────────────────────────────────────────────────
+echo ""
+if test -x $PREFIX/bin/mlterm-fb
+    echo ">>> mlterm-fb installed at: $PREFIX/bin/mlterm-fb"
+    $PREFIX/bin/mlterm-fb --version
+else
+    echo "ERROR: mlterm-fb binary not found after install"
+    exit 1
+end
+
+echo ""
+echo ">>> build-mlterm complete."
