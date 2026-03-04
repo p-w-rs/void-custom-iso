@@ -4,8 +4,10 @@
 # ── Boot menu ─────────────────────────────────────────────────────────────────
 # How long to show the menu before auto-booting (seconds). Set to 0 to skip,
 # or -1 to wait indefinitely.
+GRUB_DEFAULT=0
 GRUB_TIMEOUT=0
 GRUB_DISABLE_RECOVERY=true
+GRUB_DISTRIBUTOR="Void"
 
 # Skip probing for other OSes on other disks (saves a second or two).
 GRUB_DISABLE_OS_PROBER=true
@@ -19,14 +21,18 @@ GRUB_DISABLE_OS_PROBER=true
 #   nowatchdog                    — disable hardware watchdog
 #   threadirqs                    — force interrupt handlers onto threads
 #
-# Boot speed
+# Boot speed / silence
 #   quiet                         — suppress kernel log spam during boot
-#   udev.log_level=3              — only show errors from udev (not every device event)
+#   loglevel=0                    — only show kernel panics; everything else goes
+#                                   to ring buffer only (readable via dmesg)
+#   rd.udev.log_level=0           — silence udev during initramfs (early boot,
+#                                   where bluetooth firmware warnings appear)
+#   udev.log_level=0              — silence udev in userspace
 #   elevator=none                 — skip legacy I/O scheduler; let the kernel's
 #                                   per-queue default handle it (best for NVMe/SSD)
 #   pcie_aspm=off                 — disable PCIe power saving negotiation at boot
 #                                   (removes a stall on some hardware)
-GRUB_CMDLINE_LINUX_DEFAULT="apparmor=1 security=apparmor mitigations=off nowatchdog threadirqs quiet udev.log_level=3 elevator=none pcie_aspm=off"
+GRUB_CMDLINE_LINUX_DEFAULT="apparmor=1 security=apparmor mitigations=off nowatchdog threadirqs quiet loglevel=0 rd.udev.log_level=0 udev.log_level=0 elevator=none pcie_aspm=off"
 
 # ── Platform ──────────────────────────────────────────────────────────────────
 GRUB_PLATFORM=efi
