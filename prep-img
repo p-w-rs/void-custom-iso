@@ -3,9 +3,9 @@
 # ── Configuration ─────────────────────────────────────────────────────────────
 # Sizes accept K, M, or G units (e.g. 512K, 100M, 4G)
 set IMG_FILE   void.img
-set IMG_SIZE   64G
+set IMG_SIZE   16G
 set EFI_SIZE   100M
-set SWAP_SIZE  4G
+set SWAP_SIZE  8G
 
 # ── Derived values ─────────────────────────────────────────────────────────────
 # Convert sizes to plain MB, then stack them to get absolute parted positions.
