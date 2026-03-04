@@ -3,10 +3,21 @@
 # run-chroot
 # Run on the HOST after setup-config.
 # Copies scripts and config into the chroot, then runs them via xchroot.
+#
+# Usage:
+#   sudo fish run-chroot              → internal drive install (default)
+#   sudo fish run-chroot --removable  → USB / portable image install
 
 set CHROOT /mnt
 set SCRIPT_DIR (dirname (status filename))/chroot
 set CHROOT_SCRIPT_DIR $CHROOT/root/void-setup
+
+# ── Parse arguments ────────────────────────────────────────────────────────────
+set GRUB_FLAGS
+if contains -- --removable $argv
+    echo ">>> Removable mode: GRUB will use --removable --no-nvram"
+    set GRUB_FLAGS --removable
+end
 
 # ── Preflight checks ──────────────────────────────────────────────────────────
 if not test -f $SCRIPT_DIR/config
@@ -20,10 +31,6 @@ if not test -d $CHROOT/etc
 end
 
 # ── Generate fstab by label ───────────────────────────────────────────────────
-# We write fstab manually using labels rather than xgenfstab because xgenfstab
-# scans all host-mounted filesystems and bleeds in host entries (e.g. the host
-# swap). Our prep-img / prep-disk scripts always assign these exact labels, so
-# this fstab is correct for any machine the image is booted on.
 echo ">>> Writing fstab..."
 printf "# <file system>   <dir>      <type>   <options>          <dump>  <pass>\n" | sudo tee    $CHROOT/etc/fstab > /dev/null
 printf "LABEL=root        /          ext4     defaults,relatime  0       1\n"       | sudo tee -a $CHROOT/etc/fstab > /dev/null
@@ -56,7 +63,7 @@ xchroot $CHROOT /usr/bin/fish /root/void-setup/enable-services || exit 1
 
 echo ""
 echo ">>> Running install-grub inside chroot..."
-xchroot $CHROOT /usr/bin/fish /root/void-setup/install-grub || exit 1
+xchroot $CHROOT /usr/bin/fish /root/void-setup/install-grub $GRUB_FLAGS || exit 1
 
 echo ""
 echo ">>> Running finalize inside chroot..."

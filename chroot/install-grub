@@ -4,18 +4,31 @@
 # Runs INSIDE the chroot.
 # Installs and configures GRUB for UEFI systems.
 #
-# --removable  installs to the universal fallback path /EFI/BOOT/BOOTX64.EFI
-#              so the image boots in VMs and on real hardware without needing
-#              an NVRAM entry.
+# Usage:
+#   install-grub              → internal drive (writes NVRAM entry, recommended default)
+#   install-grub --removable  → USB / portable image
 #
-# --no-nvram   prevents grub-install from writing EFI boot entries.
-#              Without this, it writes to the HOST machine's NVRAM (via the
-#              bind-mounted efivars) and can corrupt the host's boot order.
+# --removable adds two flags to grub-install:
+#   --removable  installs to the universal fallback path /EFI/BOOT/BOOTX64.EFI
+#                so the image boots on any hardware without an NVRAM entry.
+#   --no-nvram   prevents grub-install from writing EFI boot entries into the
+#                host machine's firmware (which would corrupt the host's boot
+#                order when building an image inside a chroot).
 
 set EFI_DIR /boot/efi
 
 echo "=== GRUB UEFI Installation ==="
 echo ""
+
+# ── Parse arguments ────────────────────────────────────────────────────────────
+set REMOVABLE_FLAGS
+
+if contains -- --removable $argv
+    echo ">>> Mode: removable/portable (--removable --no-nvram)"
+    set REMOVABLE_FLAGS --removable --no-nvram
+else
+    echo ">>> Mode: internal drive (NVRAM entry will be written)"
+end
 
 # ── Verify EFI partition is mounted ───────────────────────────────────────────
 if not mountpoint -q $EFI_DIR
@@ -29,9 +42,8 @@ grub-install \
     --target=x86_64-efi \
     --efi-directory=$EFI_DIR \
     --bootloader-id=void \
-    --removable \
-    --no-nvram \
-    --recheck || exit 1
+    --recheck \
+    $REMOVABLE_FLAGS || exit 1
 
 # ── Generate GRUB config ───────────────────────────────────────────────────────
 echo ">>> Generating grub.cfg..."
