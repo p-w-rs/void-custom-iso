@@ -35,7 +35,7 @@ echo "Arch:       $ARCH"
 echo "Target:     $MOUNT_ROOT"
 echo ""
 
-sudo env XBPS_ARCH=$ARCH xbps-install -S -R $REPO_MAIN -R $REPO_NONFREE -r $MOUNT_ROOT $BASE_PACKAGES || exit 1
+sudo env XBPS_ARCH=$ARCH xbps-install -Su -R $REPO_MAIN -R $REPO_NONFREE -r $MOUNT_ROOT $BASE_PACKAGES || exit 1
 
 echo ""
 echo "Done! Base system installed to $MOUNT_ROOT"
