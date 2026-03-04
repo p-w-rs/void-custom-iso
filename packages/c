@@ -1,2 +1,4 @@
+#!/usr/bin/env fish
+
 set C        gcc gdb glibc
 set PACKAGES (string collect $PACKAGES $C)
