@@ -7,7 +7,7 @@ set ARCH            x86_64
 set MOUNT_ROOT      /mnt
 
 # Packages to ignore (will not be installed even as dependencies)
-set IGNORE_PKGS     linux linux-headers
+set IGNORE_PKGS     linux linux-headers iptables ip6tables
 
 # Packages to install with base-system
 set BASE_PACKAGES   base-system linux-mainline linux-mainline-headers \
