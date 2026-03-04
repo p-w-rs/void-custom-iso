@@ -12,8 +12,8 @@ echo ""
 
 for svc in $SERVICES
     if test -d /etc/sv/$svc
-        ln -sf /etc/sv/$svc /var/service
-        if test -L /var/service/$svc
+        ln -sf /etc/sv/$svc /etc/runit/runsvdir/default/
+        if test -L /etc/runit/runsvdir/default/$svc
             echo "    [ENABLED] $svc"
         else
             echo "    [FAILED]  $svc (ln succeeded but symlink not found)"
