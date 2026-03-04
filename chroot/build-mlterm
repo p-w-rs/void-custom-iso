@@ -3,11 +3,10 @@
 # build-mlterm
 # Runs INSIDE the chroot.
 # Builds mlterm-fb from source in /opt/mlterm and installs it system-wide.
-# mlterm-fb is a full-featured framebuffer terminal with sixel graphics,
-# freetype/fontconfig font rendering, and multi-lingual support.
 #
-# The source tree must already exist at /opt/mlterm (copied from custom-files
-# by run-chroot via the submodule at custom-files/opt/mlterm).
+# The source tree must already exist at /opt/mlterm — it is copied there from
+# custom-files/opt/mlterm by run-chroot, which itself is populated by:
+#   git submodule update --init custom-files/opt/mlterm
 
 set SRC    /opt/mlterm
 set PREFIX /usr/local
@@ -16,25 +15,27 @@ echo "=== Building mlterm-fb ==="
 echo ""
 
 # ── Sanity check ──────────────────────────────────────────────────────────────
-if not test -f $SRC/configure
-    # Try autoreconf if the configure script hasn't been generated yet
-    echo ">>> configure not found — running autoreconf..."
-    cd $SRC
-    autoreconf -fi || exit 1
+# The mlterm repo ships a pre-generated ./configure script — no autoreconf needed.
+# If it's missing, the submodule was never initialised on the host.
+if not test -x $SRC/configure
+    echo "ERROR: $SRC/configure not found."
+    echo ""
+    echo "The mlterm submodule has not been initialised. On the HOST, run:"
+    echo "  git submodule update --init custom-files/opt/mlterm"
+    echo "Then re-run run-chroot."
+    exit 1
 end
 
 # ── Configure ─────────────────────────────────────────────────────────────────
 # --with-gui=fb          build the framebuffer binary (mlterm-fb)
 # --disable-xlib         no X11 dependency
-# --prefix=/usr/local    system-wide install outside of xbps management
+# --prefix=/usr/local    system-wide, outside xbps management
 # --enable-vt52          extra terminal compat
-# --disable-ssh2         no SSH tunnelling (keep it lean; use external ssh)
-# --disable-iiimf        no legacy IIIMF input method
-# --disable-uim          no uim (not installed)
-# --disable-scim         no SCIM (not installed)
-# --disable-m17nlib      no m17n library (not installed)
+# --disable-ssh2         no SSH tunnelling (use external ssh)
+# --disable-otl          no OpenType layout (harfbuzz not installed)
+# --disable-dnd          no XDnD (X11 only)
 # sixel/image support is ON by default (do NOT pass --disable-image)
-# fontconfig is ON by default for framebuffer builds when available
+# fontconfig is ON by default for framebuffer builds when the lib is present
 
 echo ">>> Configuring (framebuffer target, sixel enabled)..."
 cd $SRC
@@ -44,6 +45,8 @@ cd $SRC
     --disable-xlib \
     --enable-vt52 \
     --disable-ssh2 \
+    --disable-otl \
+    --disable-dnd \
     --disable-iiimf \
     --disable-uim \
     --disable-scim \
@@ -57,7 +60,7 @@ cd $SRC
 
 # ── Build ─────────────────────────────────────────────────────────────────────
 echo ""
-echo ">>> Compiling..."
+echo ">>> Compiling (using "(nproc)" cores)..."
 make -j(nproc) || exit 1
 
 # ── Install ───────────────────────────────────────────────────────────────────
@@ -68,10 +71,9 @@ make install || exit 1
 # ── Verify ────────────────────────────────────────────────────────────────────
 echo ""
 if test -x $PREFIX/bin/mlterm-fb
-    echo ">>> mlterm-fb installed at: $PREFIX/bin/mlterm-fb"
-    $PREFIX/bin/mlterm-fb --version
+    echo ">>> mlterm-fb installed: "(command -v mlterm-fb || echo $PREFIX/bin/mlterm-fb)
 else
-    echo "ERROR: mlterm-fb binary not found after install"
+    echo "ERROR: mlterm-fb binary not found after install."
     exit 1
 end
 

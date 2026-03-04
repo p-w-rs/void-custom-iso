@@ -1,9 +1,3 @@
-[submodule "mlterm"]
-	path = mlterm
-	url = https://github.com/arakiken/mlterm.git
-[submodule "custom-files/mlterm"]
-	path = custom-files/mlterm
-	url = https://github.com/arakiken/mlterm.git
 [submodule "custom-files/opt/mlterm"]
 	path = custom-files/opt/mlterm
 	url = https://github.com/arakiken/mlterm.git
