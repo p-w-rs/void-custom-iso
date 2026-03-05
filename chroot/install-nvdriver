@@ -40,6 +40,11 @@ $DRIVER_RUN \
 # code paths even when CONFIG_COMMON_CLK is set.
 echo ">>> Building kernel modules..."
 cd $EXTRACT_DIR/kernel-open
+
+# nv-clk.c pulls in tegra/bpmp headers that don't exist on x86_64.
+# Remove it and stub out its symbol so the rest of the build is unaffected.
+rm -f nvidia/nv-clk.c
+echo "int nvclk_init(void) { return 0; }" > nvidia/nv-clk.c
 make modules \
     TARGET_ARCH=x86_64 \
     KERNEL_UNAME=$KERNEL_VER \
