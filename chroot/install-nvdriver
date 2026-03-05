@@ -8,8 +8,9 @@
 #
 # Run order: install-pkgs → install-nvdriver → install-cuda → finalize
 
-set DRIVER_VER  590.48.01
+set DRIVER_VER  580.126.18
 set DRIVER_RUN  /tmp/NVIDIA-Linux-x86_64-{$DRIVER_VER}.run
+# Driver 580.x pairs with CUDA 13.0 (590.x pairs with CUDA 13.1)
 set EXTRACT_DIR /tmp/nvidia-extract
 set KERNEL_VER  (uname -r)
 set KERNEL_SRC  /usr/src/kernel-headers-{$KERNEL_VER}
@@ -41,10 +42,6 @@ $DRIVER_RUN \
 echo ">>> Building kernel modules..."
 cd $EXTRACT_DIR/kernel-open
 
-# nv-clk.c pulls in tegra/bpmp headers that don't exist on x86_64.
-# Remove it and stub out its symbol so the rest of the build is unaffected.
-rm -f nvidia/nv-clk.c
-echo "int nvclk_init(void) { return 0; }" > nvidia/nv-clk.c
 make modules \
     TARGET_ARCH=x86_64 \
     KERNEL_UNAME=$KERNEL_VER \

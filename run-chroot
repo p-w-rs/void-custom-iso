@@ -2,113 +2,47 @@
 
 # run-chroot
 # Run on the HOST after editing custom-files/.
-# Copies custom-files into the target, then runs chroot scripts.
+# Copies custom-files into the target, then runs chroot scripts in order.
 #
 # Usage:
-#   sudo fish run-chroot              → internal drive install (default)
-#   sudo fish run-chroot --removable  → USB / portable image install
+#   sudo fish run-chroot              → internal drive (default)
+#   sudo fish run-chroot --removable  → USB / portable image
 
-set ROOT   (dirname (status filename))
-set CHROOT /mnt
-set CHROOT_WORK $CHROOT/root/void-setup
+set ROOT       (dirname (status filename))
+set CHROOT     /mnt
+set WORK       $CHROOT/root/void-setup
 
 # ── Parse arguments ────────────────────────────────────────────────────────────
 set GRUB_FLAGS
 if contains -- --removable $argv
-    echo ">>> Removable mode: GRUB will use --removable --no-nvram"
     set GRUB_FLAGS --removable
 end
 
-# ── Preflight checks ───────────────────────────────────────────────────────────
-if not test -d $CHROOT/etc
-    echo "ERROR: $CHROOT does not look like a mounted Void installation."
-    exit 1
-end
+# ── Copy custom-files into chroot ──────────────────────────────────────────────
+echo ">>> Copying custom-files..."
+sudo cp -rv $ROOT/custom-files/. $CHROOT/ || exit 1
 
-for f in \
-    $ROOT/custom-files/etc/fstab \
-    $ROOT/custom-files/etc/hostname \
-    $ROOT/custom-files/etc/rc.conf \
-    $ROOT/custom-files/etc/nftables.conf \
-    $ROOT/custom-files/etc/default/useradd \
-    $ROOT/custom-files/etc/default/libc-locales \
-    $ROOT/custom-files/etc/sudoers.d/wheel \
-    $ROOT/custom-files/etc/wpa_supplicant/wpa_supplicant.conf \
-    $ROOT/custom-files/etc/ssh/sshd_config \
-    $ROOT/custom-files/etc/chrony.conf \
-    $ROOT/custom-files/etc/default/apparmor \
-    $ROOT/custom-files/etc/default/grub \
-    $ROOT/custom-files/etc/profile.d/cuda.fish \
-    $ROOT/custom-files/etc/profile.d/cuda.sh \
-    $ROOT/custom-files/tmp/services
+# ── Download NVIDIA assets ─────────────────────────────────────────────────────
+# Driver 580.x pairs with CUDA 13.0. To update versions, change these URLs
+# and update DRIVER_VER / CUDA_VER in chroot/install-nvdriver and chroot/install-cuda.
+wget -P $CHROOT/tmp -nc https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.18/NVIDIA-Linux-x86_64-580.126.18.run || exit 1
+wget -P $CHROOT/tmp -nc https://developer.download.nvidia.com/compute/cuda/13.0.0/local_installers/cuda_13.0.0_580.65.06_linux.run || exit 1
 
-    if not test -f $f
-        echo "ERROR: missing expected custom file: $f"
-        exit 1
-    end
-end
-
-# ── Copy custom-files into chroot ─────────────────────────────────────────────
-echo ""
-echo ">>> Copying custom-files into chroot..."
-sudo cp -rv $ROOT/custom-files/. $CHROOT/
-echo "    Done."
-
-# ── Download nvidia assets ─────────────────────────────────────────────────────
-wget -P $CHROOT/tmp -nc https://us.download.nvidia.com/XFree86/Linux-x86_64/590.48.01/NVIDIA-Linux-x86_64-590.48.01.run || exit 1
-wget -P $CHROOT/tmp -nc https://developer.download.nvidia.com/compute/cuda/13.1.1/local_installers/cuda_13.1.1_590.48.01_linux.run || exit 1
-
-# ── Copy chroot scripts into chroot ───────────────────────────────────────────
-echo ""
-echo ">>> Copying chroot scripts to $CHROOT_WORK..."
-sudo mkdir -p $CHROOT_WORK
-sudo cp $ROOT/chroot/apply-config      $CHROOT_WORK/
-sudo cp $ROOT/chroot/install-nvdriver  $CHROOT_WORK/
-sudo cp $ROOT/chroot/install-cuda      $CHROOT_WORK/
-sudo cp $ROOT/chroot/enable-services   $CHROOT_WORK/
-sudo cp $ROOT/chroot/install-grub      $CHROOT_WORK/
-sudo cp $ROOT/chroot/finalize          $CHROOT_WORK/
-sudo chmod +x \
-    $CHROOT_WORK/apply-config \
-    $CHROOT_WORK/install-nvdriver \
-    $CHROOT_WORK/install-cuda \
-    $CHROOT_WORK/enable-services \
-    $CHROOT_WORK/install-grub \
-    $CHROOT_WORK/finalize
+# ── Copy and arm chroot scripts ────────────────────────────────────────────────
+echo ">>> Copying chroot scripts..."
+sudo mkdir -p $WORK
+sudo cp $ROOT/chroot/* $WORK/
+sudo chmod +x $WORK/* || exit 1
 
 # ── Run scripts inside chroot ──────────────────────────────────────────────────
-echo ""
-echo ">>> Running apply-config inside chroot..."
-xchroot $CHROOT /usr/bin/fish /root/void-setup/apply-config || exit 1
-
-echo ""
-echo ">>> Running install-nvdriver inside chroot..."
-xchroot $CHROOT /usr/bin/fish /root/void-setup/install-nvdriver || exit 1
-
-echo ""
-echo ">>> Running install-cuda inside chroot..."
-xchroot $CHROOT /usr/bin/fish /root/void-setup/install-cuda || exit 1
-
-echo ""
-echo ">>> Running enable-services inside chroot..."
-xchroot $CHROOT /usr/bin/fish /root/void-setup/enable-services || exit 1
-
-echo ""
-echo ">>> Running install-grub inside chroot..."
-xchroot $CHROOT /usr/bin/fish /root/void-setup/install-grub $GRUB_FLAGS || exit 1
-
-echo ""
-echo ">>> Running finalize inside chroot..."
-xchroot $CHROOT /usr/bin/fish /root/void-setup/finalize || exit 1
+# To add a new chroot step: drop a script in chroot/ and add it to this list.
+for script in apply-config install-nvdriver install-cuda enable-services install-grub finalize
+    echo ""
+    echo ">>> Running $script..."
+    xchroot $CHROOT /usr/bin/fish /root/void-setup/$script $GRUB_FLAGS || exit 1
+end
 
 # ── Cleanup ────────────────────────────────────────────────────────────────────
+sudo rm -rf $WORK
 echo ""
-echo ">>> Cleaning up scripts from chroot..."
-sudo rm -rf $CHROOT_WORK
-
-echo ""
-echo ">>> All done. Next steps:"
-echo "    1. sudo swapoff LABEL=swap"
-echo "    2. sudo umount -R /mnt"
-echo "    3. sudo losetup -d <loop device>  (if using an image)"
-echo "    4. Transfer image and boot"
+echo ">>> All done. Unmount with: sudo swapoff LABEL=swap && sudo umount -R /mnt"
