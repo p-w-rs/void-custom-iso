@@ -84,7 +84,7 @@ cp -r $EXTRACT/kernel-open/* $DKMS_SRC/
 printf 'PACKAGE_NAME="nvidia"
 PACKAGE_VERSION="%s"
 AUTOINSTALL="yes"
-MAKE[0]="make -j$(nproc) KERNEL_UNAME=${kernelver} TARGET_ARCH=x86_64 SYSSRC=%s modules"
+MAKE[0]="make -j$(nproc) KERNELRELEASE=${kernelver} KERNEL_UNAME=${kernelver} TARGET_ARCH=x86_64 SYSSRC=%s SYSOUT=%s EXTRA_CFLAGS=\"-Wno-missing-prototypes\" modules"
 BUILT_MODULE_NAME[0]="nvidia"
 BUILT_MODULE_NAME[1]="nvidia-uvm"
 BUILT_MODULE_NAME[2]="nvidia-modeset"
@@ -95,7 +95,7 @@ DEST_MODULE_LOCATION[1]="/kernel/drivers/video"
 DEST_MODULE_LOCATION[2]="/kernel/drivers/video"
 DEST_MODULE_LOCATION[3]="/kernel/drivers/video"
 DEST_MODULE_LOCATION[4]="/kernel/drivers/video"
-' $DRIVER_VER $KERNEL_SRC > $DKMS_SRC/dkms.conf
+' $DRIVER_VER $KERNEL_SRC $KERNEL_SRC > $DKMS_SRC/dkms.conf
 
 dkms add     -m nvidia -v $DRIVER_VER --force;                              or exit 1
 dkms build   -m nvidia -v $DRIVER_VER --kernelsourcedir $KERNEL_SRC -k $KERNEL_VER; or exit 1
