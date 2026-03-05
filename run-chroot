@@ -25,11 +25,6 @@ if not test -d $CHROOT/etc
     exit 1
 end
 
-# ── Download assets ─────────────────────────────────────────────────────────────
-wget -P /mnt/tmp https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.18/NVIDIA-Linux-x86_64-580.126.18.run
-wget -P /mnt/tmp https://developer.download.nvidia.com/compute/cuda/13.1.1/local_installers/cuda_13.1.1_590.48.01_linux.run
-
-
 for f in \
     $ROOT/custom-files/etc/fstab \
     $ROOT/custom-files/etc/hostname \
@@ -45,9 +40,7 @@ for f in \
     $ROOT/custom-files/etc/default/grub \
     $ROOT/custom-files/etc/profile.d/cuda.fish \
     $ROOT/custom-files/etc/profile.d/cuda.sh \
-    $ROOT/custom-files/tmp/services \
-    $ROOT/custom-files/tmp/NVIDIA-Linux-x86_64-580.126.18.run \
-    $ROOT/custom-files/tmp/cuda_13.1.1_590.48.01_linux.run
+    $ROOT/custom-files/tmp/services
 
     if not test -f $f
         echo "ERROR: missing expected custom file: $f"
@@ -60,6 +53,10 @@ echo ""
 echo ">>> Copying custom-files into chroot..."
 sudo cp -rv $ROOT/custom-files/. $CHROOT/
 echo "    Done."
+
+# ── Download nvidia assets ─────────────────────────────────────────────────────
+wget -P $CHROOT/tmp https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.18/NVIDIA-Linux-x86_64-580.126.18.run
+wget -P $CHROOT/tmp https://developer.download.nvidia.com/compute/cuda/13.1.1/local_installers/cuda_13.1.1_590.48.01_linux.run
 
 # ── Copy chroot scripts into chroot ───────────────────────────────────────────
 echo ""
