@@ -39,13 +39,21 @@ sudo chmod +x $WORK/* || exit 1
 for script in apply-config install-nvdriver install-cuda enable-services install-grub finalize
     echo ""
     echo ">>> Running $script..."
+    set flags
     if test $script = install-grub
-        xchroot $CHROOT /usr/bin/fish /root/void-setup/$script $GRUB_FLAGS
-    else
-        xchroot $CHROOT /usr/bin/fish /root/void-setup/$script
+        set flags $GRUB_FLAGS
     end
-    if test $status -ne 0
-        echo "ERROR: $script failed"
+    xchroot $CHROOT /usr/bin/fish /root/void-setup/$script $flags
+    set exit_status $status
+
+    # xchroot sometimes fails to unmount /dev if a short-lived process lingers.
+    # Force-unmount any leftover chroot mounts before the next script runs.
+    for mnt in dev/pts dev/shm dev proc sys run
+        sudo umount -lf $CHROOT/$mnt 2>/dev/null
+    end
+
+    if test $exit_status -ne 0
+        echo "ERROR: $script failed (exit $exit_status)"
         exit 1
     end
 end
