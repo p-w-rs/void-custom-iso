@@ -1,51 +1,37 @@
 #!/usr/bin/env fish
 
-# apply-config
-# Runs INSIDE the chroot.
-# All static config files have already been copied in by run-chroot.
-# This script only handles what cannot be a static file:
-#   - locale compilation (xbps-reconfigure must run inside chroot)
-#   - permission hardening on sensitive files
-#   - admin user creation and password prompts
+# apply-config — runs INSIDE the chroot.
+# Compiles locales, hardens file permissions, and creates the admin user.
+# Static config files were already copied in by run-chroot.
 
-echo "=== Void Linux System Configuration ==="
-echo ""
+echo "=== System Configuration ==="
 
-# ── Locale ─────────────────────────────────────────────────────────────────────
-# /etc/default/libc-locales is already pre-edited with the correct locale
-# uncommented (copied from custom-files). Just compile the locale files.
-echo ">>> Generating locale files..."
-xbps-reconfigure -f glibc-locales || exit 1
+# Compile locales (must run inside chroot; /etc/default/libc-locales already edited)
+echo ">>> Generating locales..."
+xbps-reconfigure -f glibc-locales; or exit 1
 
-# ── Permission hardening ───────────────────────────────────────────────────────
-# These files must have exact permissions — enforce after the cp
-echo ">>> Hardening file permissions..."
+# Permissions that must be exact — enforce after the file copy
+echo ">>> Hardening permissions..."
 chmod 440 /etc/sudoers.d/wheel
 chmod 600 /etc/nftables.conf
 chmod 600 /etc/wpa_supplicant/wpa_supplicant.conf
 
-# ── Root password ──────────────────────────────────────────────────────────────
+# Root password
 echo ""
-echo ">>> Set the ROOT password:"
-passwd root || exit 1
+echo ">>> Set ROOT password:"
+passwd root; or exit 1
 
-# ── Admin user ─────────────────────────────────────────────────────────────────
-# useradd picks up SHELL and GROUPS from /etc/default/useradd automatically.
-# wheel is added explicitly here — it is intentionally absent from the defaults
-# so that future users created with 'useradd -m <name>' do not get sudo.
+# Admin user
+# wheel is added explicitly here so plain 'useradd -m <name>' later won't get sudo
 echo ""
-echo ">>> Enter admin username: "
+echo -n ">>> Admin username: "
 read ADMIN_USER
-
-echo ">>> Creating admin user: $ADMIN_USER"
-useradd -m -G wheel $ADMIN_USER || exit 1
-
+useradd -m -G wheel $ADMIN_USER; or exit 1
 echo ">>> Set password for $ADMIN_USER:"
-passwd $ADMIN_USER || exit 1
+passwd $ADMIN_USER; or exit 1
 
-# ── Summary ────────────────────────────────────────────────────────────────────
 echo ""
-echo ">>> apply-config complete."
+echo ">>> apply-config done."
 echo "    Hostname : "(cat /etc/hostname)
 echo "    Timezone : "(grep ^TIMEZONE /etc/rc.conf | cut -d'"' -f2)
-echo "    User     : $ADMIN_USER (+ wheel)"
+echo "    User     : $ADMIN_USER (wheel)"

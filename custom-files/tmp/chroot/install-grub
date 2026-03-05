@@ -1,53 +1,31 @@
 #!/usr/bin/env fish
 
-# install-grub
-# Runs INSIDE the chroot.
-# Installs and configures GRUB for UEFI systems.
+# install-grub — runs INSIDE the chroot.
+# Installs GRUB for UEFI and generates grub.cfg.
 #
 # Usage:
-#   install-grub              → internal drive (writes NVRAM entry, recommended default)
-#   install-grub --removable  → USB / portable image
-#
-# --removable adds two flags to grub-install:
-#   --removable  installs to the universal fallback path /EFI/BOOT/BOOTX64.EFI
-#                so the image boots on any hardware without an NVRAM entry.
-#   --no-nvram   prevents grub-install from writing EFI boot entries into the
-#                host machine's firmware (which would corrupt the host's boot
-#                order when building an image inside a chroot).
+#   install-grub              → internal drive (writes NVRAM entry)
+#   install-grub --removable  → USB/image (fallback EFI path, no NVRAM)
 
-set EFI_DIR /boot/efi
+echo "=== GRUB Installation ==="
 
-echo "=== GRUB UEFI Installation ==="
-echo ""
+mountpoint -q /boot/efi; or begin; echo "ERROR: /boot/efi not mounted"; exit 1; end
 
-# ── Parse arguments ────────────────────────────────────────────────────────────
-set REMOVABLE_FLAGS
+# --removable  → installs to /EFI/BOOT/BOOTX64.EFI so any machine can boot it
+# --no-nvram   → don't write boot entries into the host firmware (safe in chroot)
+set FLAGS
+contains -- --removable $argv; and set FLAGS --removable --no-nvram
 
-if contains -- --removable $argv
-    echo ">>> Mode: removable/portable (--removable --no-nvram)"
-    set REMOVABLE_FLAGS --removable --no-nvram
-else
-    echo ">>> Mode: internal drive (NVRAM entry will be written)"
-end
-
-# ── Verify EFI partition is mounted ───────────────────────────────────────────
-if not mountpoint -q $EFI_DIR
-    echo "ERROR: $EFI_DIR is not mounted. Check your EFI partition."
-    exit 1
-end
-
-# ── Install GRUB to the EFI partition ─────────────────────────────────────────
-echo ">>> Running grub-install..."
+echo ">>> grub-install..."
 grub-install \
     --target=x86_64-efi \
-    --efi-directory=$EFI_DIR \
+    --efi-directory=/boot/efi \
     --bootloader-id=void \
     --recheck \
-    $REMOVABLE_FLAGS || exit 1
+    $FLAGS
+or exit 1
 
-# ── Generate GRUB config ───────────────────────────────────────────────────────
-echo ">>> Generating grub.cfg..."
-grub-mkconfig -o /boot/grub/grub.cfg || exit 1
+echo ">>> grub-mkconfig..."
+grub-mkconfig -o /boot/grub/grub.cfg; or exit 1
 
-echo ""
-echo ">>> install-grub complete."
+echo ">>> install-grub done."

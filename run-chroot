@@ -1,62 +1,56 @@
 #!/usr/bin/env fish
 
-# run-chroot
-# Run on the HOST after editing custom-files/.
-# Copies custom-files into the target, then runs chroot scripts in order.
+# run-chroot — copy custom-files into /mnt and run each chroot script in order.
+# Run on the HOST after install-pkgs and mount-disk.
 #
 # Usage:
-#   sudo fish run-chroot              → internal drive (default)
-#   sudo fish run-chroot --removable  → USB / portable image
+#   sudo fish run-chroot              → internal drive (writes NVRAM)
+#   sudo fish run-chroot --removable  → USB/image (no NVRAM, fallback EFI path)
+#
+# To add a chroot step: drop a script in custom-files/tmp/chroot/ and add it
+# to the SCRIPTS list below. Scripts run as /usr/bin/fish inside the chroot.
 
-set ROOT       (dirname (status filename))
-set CHROOT     /mnt
-set WORK       $CHROOT/tmp/chroot
+source (dirname (status filename))/helpers/die
 
-# ── Parse arguments ────────────────────────────────────────────────────────────
+set CHROOT /mnt
+set WORK   $CHROOT/tmp/chroot
+
+# Pass --removable through to install-grub if requested
 set GRUB_FLAGS
-if contains -- --removable $argv
-    set GRUB_FLAGS --removable
-end
+contains -- --removable $argv; and set GRUB_FLAGS --removable
 
-# ── Copy custom-files into chroot ──────────────────────────────────────────────
+# ── Copy config files into the chroot ─────────────────────────────────────────
 echo ">>> Copying custom-files..."
-sudo cp -rv $ROOT/custom-files/. $CHROOT/ || exit 1
+run sudo cp -rv (dirname (status filename))/custom-files/. $CHROOT/
 
-# ── Download NVIDIA assets ─────────────────────────────────────────────────────
-# Driver 580.x pairs with CUDA 13.0. To update versions, change these URLs
-# and update DRIVER_VER / CUDA_VER in chroot/install-nvdriver and chroot/install-cuda.
-wget -P $CHROOT/tmp -nc https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.18/NVIDIA-Linux-x86_64-580.126.18.run || exit 1
-wget -P $CHROOT/tmp -nc https://developer.download.nvidia.com/compute/cuda/13.0.0/local_installers/cuda_13.0.0_580.65.06_linux.run || exit 1
+# ── Download NVIDIA assets (skipped if already present) ───────────────────────
+# Driver 580.x pairs with CUDA 13.0. Update versions here and in the two
+# install-nvdriver / install-cuda chroot scripts when upgrading.
+run wget -P $CHROOT/tmp -nc \
+    https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.18/NVIDIA-Linux-x86_64-580.126.18.run
+run wget -P $CHROOT/tmp -nc \
+    https://developer.download.nvidia.com/compute/cuda/13.0.0/local_installers/cuda_13.0.0_580.65.06_linux.run
 
-# ── Ensure scripts are executable ────────────────────────────────────────────────
-sudo chmod +x $WORK/* || exit 1
+run sudo chmod +x $WORK/*
 
-# ── Run scripts inside chroot ──────────────────────────────────────────────────
-# To add a new chroot step: drop a script in custom-files/tmp/chroot/ and add it to this list.
-for script in apply-config install-nvdriver install-cuda setup-fish enable-services install-grub finalize
+# ── Run each script inside the chroot ─────────────────────────────────────────
+# Order matters: apply-config sets up the system, nvdriver/cuda build the GPU
+# stack, setup-fish installs shell plugins, enable-services links runit dirs,
+# install-grub writes the bootloader, finalize reconfigures all packages.
+
+set SCRIPTS apply-config install-nvdriver install-cuda setup-fish enable-services install-grub finalize
+
+for script in $SCRIPTS
     echo ""
-    echo ">>> Running $script..."
+    echo ">>> $script"
+
     set flags
-    if test $script = install-grub
-        set flags $GRUB_FLAGS
-    end
+    test $script = install-grub; and set flags $GRUB_FLAGS
 
-    sudo rm -f $CHROOT/tmp/.status
-    xchroot $CHROOT /usr/bin/fish -c \
-        "$WORK/$script $flags; echo \$status > /tmp/.status"
-
-    # Force-unmount any mounts xchroot left behind
-    for mnt in dev/pts dev/shm dev proc sys run
-        sudo umount -lf $CHROOT/$mnt 2>/dev/null
-    end
-
-    set inner_status (sudo cat $CHROOT/tmp/.status 2>/dev/null)
-    if test "$inner_status" != "0"
-        echo "ERROR: $script failed (exit $inner_status)"
-        exit 1
-    end
+    xchroot $CHROOT /usr/bin/fish $WORK/$script $flags
+    or die "$script failed"
 end
 
-# ── Cleanup ────────────────────────────────────────────────────────────────────
 echo ""
-echo ">>> All done. Unmount with: sudo swapoff LABEL=swap && sudo umount -R /mnt"
+echo ">>> All done. Unmount with:"
+echo "    sudo swapoff LABEL=swap && sudo umount -R /mnt"

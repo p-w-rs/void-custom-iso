@@ -1,15 +1,9 @@
 #!/usr/bin/env fish
 
-# finalize
-# Runs INSIDE the chroot.
-# Reconfigures all packages so the kernel, initramfs, and
-# other post-install hooks are fully applied.
+# finalize — runs INSIDE the chroot (last step).
+# Reconfigures all packages so the kernel, initramfs, and any other
+# post-install hooks are fully applied before first boot.
 
-echo "=== Finalizing Installation ==="
-echo ""
-
-echo ">>> Reconfiguring all packages (this sets up the kernel/initramfs)..."
-xbps-reconfigure -fa || exit 1
-
-echo ""
-echo ">>> finalize complete."
+echo "=== Finalizing ==="
+xbps-reconfigure -fa; or exit 1
+echo ">>> finalize done."

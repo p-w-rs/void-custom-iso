@@ -1,63 +1,31 @@
 #!/usr/bin/env fish
 
-# ── Configuration ─────────────────────────────────────────────────────────────
+# mount-disk — mount a partitioned Void Linux disk under /mnt.
+# Mounts root → /mnt, EFI → /mnt/boot/efi, and enables swap.
+#
 # Usage: ./mount-disk <device>
-# Examples:
 #   ./mount-disk /dev/loop0      (disk image)
-#   ./mount-disk /dev/sda        (SATA/SCSI drive)
-#   ./mount-disk /dev/nvme0n1    (NVMe drive)
+#   ./mount-disk /dev/sda        (SATA/SCSI)
+#   ./mount-disk /dev/nvme0n1    (NVMe)
 
-set MOUNT_ROOT /mnt
+source (dirname (status filename))/helpers/die
 
-# ── Argument handling ──────────────────────────────────────────────────────────
-if test (count $argv) -ne 1
-    echo "Usage: "(status filename)" <device>"
-    echo "  e.g. "(status filename)" /dev/loop0"
-    echo "  e.g. "(status filename)" /dev/sda"
-    echo "  e.g. "(status filename)" /dev/nvme0n1"
-    exit 1
-end
-
+test (count $argv) -eq 1; or die "Usage: "(status filename)" <device>"
 set DEV $argv[1]
 
-# Detect partition suffix:
-#   NVMe and loop devices append 'p' before the number (e.g. nvme0n1p1, loop0p1)
-#   SATA/SCSI drives do not                            (e.g. sda1)
+# NVMe/loop devices use 'p' before the partition number
 if string match -qr '(nvme|loop)' $DEV
-    set PART_EFI  {$DEV}p1
-    set PART_SWAP {$DEV}p2
-    set PART_ROOT {$DEV}p3
+    set P {$DEV}p
 else
-    set PART_EFI  {$DEV}1
-    set PART_SWAP {$DEV}2
-    set PART_ROOT {$DEV}3
+    set P $DEV
 end
 
-echo "Device:     $DEV"
-echo "EFI:        $PART_EFI"
-echo "Swap:       $PART_SWAP"
-echo "Root:       $PART_ROOT"
-echo "Mount root: $MOUNT_ROOT"
-echo ""
-
-# ── 1. Mount root filesystem ───────────────────────────────────────────────────
-echo "Mounting root filesystem..."
-sudo mount $PART_ROOT $MOUNT_ROOT || exit 1
-
-# ── 2. Mount EFI System Partition ─────────────────────────────────────────────
-echo "Mounting EFI partition..."
-sudo mkdir -p $MOUNT_ROOT/boot/efi || exit 1
-sudo mount $PART_EFI $MOUNT_ROOT/boot/efi || exit 1
-
-# ── 3. Enable swap ─────────────────────────────────────────────────────────────
-# Swap is pre-formatted; we only need swapon here.
-echo "Enabling swap..."
-sudo swapon $PART_SWAP || exit 1
+echo "Mounting $DEV → /mnt..."
+run sudo mount      {$P}3 /mnt
+run sudo mkdir -p   /mnt/boot/efi
+run sudo mount      {$P}1 /mnt/boot/efi
+run sudo swapon     {$P}2
 
 echo ""
-echo "Done! Filesystems mounted under $MOUNT_ROOT"
-echo ""
-echo "To unmount when finished:"
-echo "  sudo swapoff $PART_SWAP"
-echo "  sudo umount $MOUNT_ROOT/boot/efi"
-echo "  sudo umount $MOUNT_ROOT"
+echo "Mounted. To unmount when finished:"
+echo "  sudo swapoff {$P}2 && sudo umount /mnt/boot/efi && sudo umount /mnt"

@@ -1,46 +1,51 @@
 #!/usr/bin/env fish
 
-# ── Configuration ─────────────────────────────────────────────────────────────
-set REPO_MAIN       https://repo-default.voidlinux.org/current
-set REPO_NONFREE    https://repo-default.voidlinux.org/current/nonfree
-set ARCH            x86_64
-set MOUNT_ROOT      /mnt
+# install-pkgs — bootstrap the Void Linux package tree into /mnt.
+# Run on the HOST after mount-disk, before run-chroot.
+#
+# To add packages: either append to PACKAGES below, or drop a .fish file
+# in packages/ that appends to $PACKAGES (see existing files for the pattern).
+# To add a repo: append -R <url> to the xbps-install call at the bottom.
 
-# Packages to ignore (will not be installed even as dependencies)
-set IGNORE_PKGS     linux linux-headers nvidia mesa-nouveau-dri
+source (dirname (status filename))/helpers/die
 
-# Packages to install with base-system
-set PACKAGES        base-system linux-mainline linux-mainline-headers void-repo-nonfree \
-                    linux-firmware linux-firmware-dvb linux-firmware-intel linux-firmware-network linux-firmware-nvidia \
-                    acpi chrony dhcpcd wpa_supplicant openssh nftables runit-nftables apparmor dbus bluez \
-                    sudo fish-shell nerd-fonts net-tools xtools parted grub-x86_64-efi glibc-locales
+# ── Repos and target ──────────────────────────────────────────────────────────
+set REPOS      -R https://repo-default.voidlinux.org/current \
+               -R https://repo-default.voidlinux.org/current/nonfree
+set ARCH       x86_64
+set TARGET     /mnt
 
-# Add all packages from file in the packages dir
-for file in packages/*
-    test -f "$file" -a -r "$file"; and source "$file"
+# ── Packages to ignore (never installed, even as dependencies) ────────────────
+# Kept out to avoid conflicts: linux (we use linux-mainline), nvidia upstream
+# packages (we install from .run), mesa-nouveau (replaced by proprietary driver).
+set IGNORE     linux linux-headers nvidia mesa-nouveau-dri
+
+# ── Base packages ─────────────────────────────────────────────────────────────
+set PACKAGES \
+    base-system linux-mainline linux-mainline-headers void-repo-nonfree \
+    linux-firmware linux-firmware-dvb linux-firmware-intel \
+    linux-firmware-network linux-firmware-nvidia \
+    acpi chrony dhcpcd wpa_supplicant openssh \
+    nftables runit-nftables apparmor dbus bluez \
+    sudo fish-shell nerd-fonts net-tools xtools \
+    parted grub-x86_64-efi glibc-locales
+
+# ── Optional package sets (source each file in packages/) ─────────────────────
+for f in (dirname (status filename))/packages/*.fish
+    source $f
 end
 
-# ── 1. Copy XBPS RSA keys ──────────────────────────────────────────────────────
-echo "Copying XBPS RSA keys..."
-sudo mkdir -p $MOUNT_ROOT/var/db/xbps/keys || exit 1
-sudo cp /var/db/xbps/keys/* $MOUNT_ROOT/var/db/xbps/keys/ || exit 1
+# ── Write ignorepkg config before installing ──────────────────────────────────
+run sudo mkdir -p $TARGET/var/db/xbps/keys $TARGET/etc/xbps.d
+run sudo cp /var/db/xbps/keys/* $TARGET/var/db/xbps/keys/
 
-# ── 2. Write ignorepkg config before installation ─────────────────────────────
-echo "Writing ignorepkg config..."
-sudo mkdir -p $MOUNT_ROOT/etc/xbps.d || exit 1
-for pkg in $IGNORE_PKGS
-    echo "ignorepkg=$pkg" | sudo tee -a $MOUNT_ROOT/etc/xbps.d/10-ignore.conf
+for pkg in $IGNORE
+    echo "ignorepkg=$pkg" | sudo tee -a $TARGET/etc/xbps.d/10-ignore.conf
 end
 
-# ── 3. Bootstrap base installation ────────────────────────────────────────────
-echo "Installing: $PACKAGES"
-echo "Repos:      $REPO_MAIN $REPO_NONFREE"
-echo "Arch:       $ARCH"
-echo "Target:     $MOUNT_ROOT"
-echo ""
-
-sudo env XBPS_ARCH=$ARCH xbps-install -Su -R $REPO_MAIN -R $REPO_NONFREE -r $MOUNT_ROOT $PACKAGES || exit 1
+# ── Install ───────────────────────────────────────────────────────────────────
+echo "Installing packages to $TARGET..."
+run sudo env XBPS_ARCH=$ARCH xbps-install -Su $REPOS -r $TARGET $PACKAGES
 
 echo ""
-echo "Done! Base system installed to $MOUNT_ROOT"
-echo "Ignored packages: $IGNORE_PKGS"
+echo ">>> install-pkgs done. Ignored: $IGNORE"

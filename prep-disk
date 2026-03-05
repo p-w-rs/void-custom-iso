@@ -1,72 +1,58 @@
 #!/usr/bin/env fish
 
+# prep-disk — partition and format a physical disk for Void Linux.
+# Writes GPT (EFI + swap + root), formats all three.
+# DESTRUCTIVE — requires typing the device name to confirm.
+#
+# Usage: ./prep-disk /dev/sda
+# To adjust partition sizes, edit the variables below.
+
+source (dirname (status filename))/helpers/die
+
 # ── Configuration ─────────────────────────────────────────────────────────────
-# Sizes accept K, M, or G units (e.g. 512K, 100M, 4G)
-set EFI_SIZE   100M
-set SWAP_SIZE  8G
+set EFI_SIZE  100M
+set SWAP_SIZE 8G
 
-# ── Derived values ─────────────────────────────────────────────────────────────
-# Convert sizes to plain MB, then stack them to get absolute parted positions.
-# We start at 1M to leave room for the GPT header.
-set MATH (dirname (status filename))/helpers/size-mb
-
-set EFI_MB  ($MATH $EFI_SIZE)  || exit 1
-set SWAP_MB ($MATH $SWAP_SIZE) || exit 1
-
-set EFI_START  1M
-set EFI_END    (math "1 + $EFI_MB")M
-set SWAP_START $EFI_END
-set SWAP_END   (math "1 + $EFI_MB + $SWAP_MB")M
-
-# ── 1. Validate the disk argument ─────────────────────────────────────────────
-if test (count $argv) -ne 1
-    echo "Usage: "(status filename)" <disk>"
-    echo "Example: "(status filename)" /dev/sda"
-    exit 1
-end
-
+# ── Argument + safety check ───────────────────────────────────────────────────
+test (count $argv) -eq 1; or die "Usage: "(status filename)" <disk>  e.g. /dev/sda"
 set DISK $argv[1]
+test -b $DISK; or die "'$DISK' is not a block device"
 
-if not test -b $DISK
-    echo "Error: '$DISK' is not a block device."
-    exit 1
-end
-
-# ── 2. Safety confirmation — user must type the device name to proceed ─────────
 echo "WARNING: This will DESTROY all data on $DISK"
 echo -n "Type the device name to confirm: "
 read CONFIRM
+test "$CONFIRM" = "$DISK"; or die "Confirmation failed. Aborting."
 
-if test "$CONFIRM" != "$DISK"
-    echo "Confirmation failed. Aborting."
-    exit 1
-end
+# ── Partition layout ──────────────────────────────────────────────────────────
+set MATH (dirname (status filename))/helpers/size-mb
+set EFI_MB  (run $MATH $EFI_SIZE)
+set SWAP_MB (run $MATH $SWAP_SIZE)
 
-# ── 3. Determine partition naming convention ───────────────────────────────────
-# NVMe and loop devices append 'p' before the number (e.g. nvme0n1p1)
-# SATA/SCSI drives do not (e.g. sda1)
+set EFI_END  (math "1 + $EFI_MB")M
+set SWAP_END (math "1 + $EFI_MB + $SWAP_MB")M
+
+# NVMe/loop devices use 'p' before the partition number (nvme0n1p1 vs sda1)
 if string match -qr '(nvme|loop)' $DISK
-    set PART_PREFIX {$DISK}p
+    set P {$DISK}p
 else
-    set PART_PREFIX $DISK
+    set P $DISK
 end
 
-# ── 4. Write a GPT partition table with EFI, swap, and root partitions ─────────
+# ── Partition and format ───────────────────────────────────────────────────────
 echo "Partitioning $DISK..."
-sudo parted --script $DISK \
+run sudo parted --script $DISK \
     mklabel gpt \
-    mkpart EFI  fat32      $EFI_START  $EFI_END  \
-    mkpart swap linux-swap $SWAP_START $SWAP_END \
-    mkpart root ext4       $SWAP_END   100%      \
-    set 1 esp on || exit 1
+    mkpart EFI  fat32      1M       $EFI_END  \
+    mkpart swap linux-swap $EFI_END $SWAP_END \
+    mkpart root ext4       $SWAP_END 100%     \
+    set 1 esp on
 
 sleep 1
 
-# ── 5. Format each partition ───────────────────────────────────────────────────
 echo "Formatting partitions..."
-sudo mkfs.vfat -F32 -n EFI  {$PART_PREFIX}1 || exit 1   # EFI  → FAT32
-sudo mkswap    -L swap       {$PART_PREFIX}2 || exit 1   # swap → swap
-sudo mkfs.ext4 -L root       {$PART_PREFIX}3 || exit 1   # root → ext4
+run sudo mkfs.vfat -F32 -n EFI  {$P}1
+run sudo mkswap    -L   swap    {$P}2
+run sudo mkfs.ext4 -L   root    {$P}3
 
 echo ""
-echo "Done! $DISK has been partitioned and formatted."
+echo "Done. $DISK is partitioned and formatted."

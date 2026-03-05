@@ -1,27 +1,21 @@
 #!/usr/bin/env fish
 
-# enable-services
-# Runs INSIDE the chroot.
-# Reads /etc/void-install/services and symlinks each into runit.
+# enable-services — runs INSIDE the chroot.
+# Symlinks each service listed in /tmp/services into runit's default runsvdir.
+# Edit custom-files/tmp/services to add or remove services.
 
 set SERVICES_FILE /tmp/services
+test -f $SERVICES_FILE; or begin; echo "ERROR: $SERVICES_FILE not found"; exit 1; end
 
-if not test -f $SERVICES_FILE
-    echo "ERROR: $SERVICES_FILE not found."
-    exit 1
-end
+echo "=== Enabling Services ==="
 
-echo "=== Enabling Runit Services ==="
-echo ""
-
-for svc in (grep -v '^\s*#' $SERVICES_FILE | grep -v '^\s*$')
+for svc in (grep -v '^\s*[#$]' $SERVICES_FILE | grep -v '^\s*$')
     if test -d /etc/sv/$svc
         ln -sf /etc/sv/$svc /etc/runit/runsvdir/default/
-        echo "    [ENABLED] $svc"
+        echo "  [on]  $svc"
     else
-        echo "    [SKIPPED] $svc (not found in /etc/sv)"
+        echo "  [??]  $svc — not found in /etc/sv, skipped"
     end
 end
 
-echo ""
-echo ">>> enable-services complete."
+echo ">>> enable-services done."
