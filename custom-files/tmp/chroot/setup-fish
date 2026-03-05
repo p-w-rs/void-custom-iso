@@ -1,6 +1,6 @@
 #!/usr/bin/env fish
 
-source (dirname (status filename))/helpers/die
+source (dirname (status filename))/die
 
 # setup-fish — runs INSIDE the chroot.
 # Installs Fisher and all plugins listed in /tmp/fish-plugins globally.

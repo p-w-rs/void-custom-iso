@@ -7,7 +7,7 @@
 #   install-grub              → internal drive (writes NVRAM entry)
 #   install-grub --removable  → USB/image (fallback EFI path, no NVRAM)
 
-source (dirname (status filename))/helpers/die
+source (dirname (status filename))/die
 
 echo "=== GRUB Installation ==="
 

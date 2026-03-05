@@ -8,7 +8,7 @@
 #
 # Run order: install-pkgs → install-nvdriver → install-cuda → finalize
 
-source (dirname (status filename))/helpers/die
+source (dirname (status filename))/die
 
 set DRIVER_VER  580.126.18
 set DRIVER_RUN  /tmp/NVIDIA-Linux-x86_64-{$DRIVER_VER}.run

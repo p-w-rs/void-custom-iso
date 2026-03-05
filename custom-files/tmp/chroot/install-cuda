@@ -10,7 +10,7 @@
 # CUDA_BUNDLED is the driver version the CUDA installer bundles (used only
 # in the filename; we pass --override to suppress the version mismatch warning).
 
-source (dirname (status filename))/helpers/die
+source (dirname (status filename))/die
 
 set CUDA_VER     13.0.0
 set CUDA_MAJOR   13.0

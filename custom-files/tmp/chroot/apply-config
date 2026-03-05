@@ -4,7 +4,7 @@
 # Compiles locales, hardens file permissions, and creates the admin user.
 # Static config files were already copied in by run-chroot.
 
-source (dirname (status filename))/helpers/die
+source (dirname (status filename))/die
 
 echo "=== System Configuration ==="
 
