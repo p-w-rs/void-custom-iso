@@ -107,7 +107,7 @@ printf 'CFLAGS_uvm_gpu_access_counters.o := -O1\n' \
 printf 'PACKAGE_NAME="nvidia"
 PACKAGE_VERSION="%s"
 AUTOINSTALL="yes"
-MAKE[0]="make -j$(nproc) KERNELRELEASE=${kernelver} KERNEL_UNAME=${kernelver} TARGET_ARCH=x86_64 SYSSRC=%s SYSOUT=%s EXTRA_CFLAGS=\"-Wno-missing-prototypes\" modules"
+MAKE[0]="make -j$(nproc) KERNEL_UNAME=${kernelver} TARGET_ARCH=x86_64 SYSSRC=%s SYSOUT=%s EXTRA_CFLAGS=-Wno-missing-prototypes modules"
 BUILT_MODULE_NAME[0]="nvidia"
 BUILT_MODULE_NAME[1]="nvidia-uvm"
 BUILT_MODULE_NAME[2]="nvidia-modeset"
