@@ -7,11 +7,12 @@
 #
 # Run order: install-pkgs → install-nvdriver → install-cuda → finalize
 
-set DRIVER_VER  580.126.18
-set CUDA_VER    13.0.0
-set CUDA_MAJOR  13.0
-set CUDA_RUN    /tmp/cuda_{$CUDA_VER}_{$DRIVER_VER}_linux.run
-set CUDA_PATH   /usr/local/cuda-{$CUDA_MAJOR}
+set DRIVER_VER      580.126.18
+set CUDA_VER        13.0.0
+set CUDA_MAJOR      13.0
+set CUDA_BUNDLED    580.65.06
+set CUDA_RUN        /tmp/cuda_{$CUDA_VER}_{$CUDA_BUNDLED}_linux.run
+set CUDA_PATH       /usr/local/cuda-{$CUDA_MAJOR}
 
 echo "=== CUDA Toolkit Installation ==="
 echo ""
