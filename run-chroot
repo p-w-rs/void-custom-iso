@@ -63,13 +63,15 @@ echo ""
 echo ">>> Copying chroot scripts to $CHROOT_WORK..."
 sudo mkdir -p $CHROOT_WORK
 sudo cp $ROOT/chroot/apply-config      $CHROOT_WORK/
-sudo cp $ROOT/chroot/install-nvidia    $CHROOT_WORK/
+sudo cp $ROOT/chroot/install-nvdriver  $CHROOT_WORK/
+sudo cp $ROOT/chroot/install-cuda      $CHROOT_WORK/
 sudo cp $ROOT/chroot/enable-services   $CHROOT_WORK/
 sudo cp $ROOT/chroot/install-grub      $CHROOT_WORK/
 sudo cp $ROOT/chroot/finalize          $CHROOT_WORK/
 sudo chmod +x \
     $CHROOT_WORK/apply-config \
-    $CHROOT_WORK/install-nvidia \
+    $CHROOT_WORK/install-nvdriver \
+    $CHROOT_WORK/install-cuda \
     $CHROOT_WORK/enable-services \
     $CHROOT_WORK/install-grub \
     $CHROOT_WORK/finalize
@@ -80,8 +82,12 @@ echo ">>> Running apply-config inside chroot..."
 xchroot $CHROOT /usr/bin/fish /root/void-setup/apply-config || exit 1
 
 echo ""
-echo ">>> Running install-nvidia inside chroot..."
-xchroot $CHROOT /usr/bin/fish /root/void-setup/install-nvidia || exit 1
+echo ">>> Running install-nvdriver inside chroot..."
+xchroot $CHROOT /usr/bin/fish /root/void-setup/install-nvdriver || exit 1
+
+echo ""
+echo ">>> Running install-cuda inside chroot..."
+xchroot $CHROOT /usr/bin/fish /root/void-setup/install-cuda || exit 1
 
 echo ""
 echo ">>> Running enable-services inside chroot..."
