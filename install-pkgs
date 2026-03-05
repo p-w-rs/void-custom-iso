@@ -18,11 +18,11 @@ set TARGET     /mnt
 # ── Packages to ignore (never installed, even as dependencies) ────────────────
 # Kept out to avoid conflicts: linux (we use linux-mainline), nvidia upstream
 # packages (we install from .run), mesa-nouveau (replaced by proprietary driver).
-set IGNORE     linux linux-headers nvidia mesa-nouveau-dri
+set IGNORE     linux linux-headers
 
 # ── Base packages ─────────────────────────────────────────────────────────────
 set PACKAGES \
-    base-system linux-mainline linux-mainline-headers void-repo-nonfree \
+    base-system base-devel linux6.18 linux6.18-headers void-repo-nonfree \
     linux-firmware linux-firmware-dvb linux-firmware-intel \
     linux-firmware-network linux-firmware-nvidia \
     acpi chrony dhcpcd wpa_supplicant openssh \

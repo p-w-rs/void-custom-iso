@@ -32,6 +32,7 @@ chmod +x $CHROOT/tmp/NVIDIA-Linux-x86_64-580.126.18.run
 run wget -P $CHROOT/tmp -nc \
     https://developer.download.nvidia.com/compute/cuda/13.0.0/local_installers/cuda_13.0.0_580.65.06_linux.run
 chmod +x $CHROOT/tmp/cuda_13.0.0_580.65.06_linux.run
+# https://developer.download.nvidia.com/compute/cuda/13.1.1/local_installers/cuda_13.1.1_590.48.01_linux.run
 
 run sudo chmod +x $CHROOT$SDIR/*
 
@@ -40,7 +41,8 @@ run sudo chmod +x $CHROOT$SDIR/*
 # stack, setup-fish installs shell plugins, enable-services links runit dirs,
 # install-grub writes the bootloader, finalize reconfigures all packages.
 
-set SCRIPTS apply-config install-nvdriver install-cuda setup-fish enable-services install-grub finalize
+# hold install-nvdriver
+set SCRIPTS apply-config install-cuda setup-fish enable-services install-grub finalize
 
 for script in $SCRIPTS
     echo ""
