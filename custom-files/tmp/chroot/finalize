@@ -4,6 +4,8 @@
 # Reconfigures all packages so the kernel, initramfs, and any other
 # post-install hooks are fully applied before first boot.
 
+source (dirname (status filename))/helpers/die
+
 echo "=== Finalizing ==="
-xbps-reconfigure -fa; or exit 1
+run xbps-reconfigure -fa
 echo ">>> finalize done."

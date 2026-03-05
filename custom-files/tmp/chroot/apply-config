@@ -4,11 +4,13 @@
 # Compiles locales, hardens file permissions, and creates the admin user.
 # Static config files were already copied in by run-chroot.
 
+source (dirname (status filename))/helpers/die
+
 echo "=== System Configuration ==="
 
 # Compile locales (must run inside chroot; /etc/default/libc-locales already edited)
 echo ">>> Generating locales..."
-xbps-reconfigure -f glibc-locales; or exit 1
+run xbps-reconfigure -f glibc-locales
 
 # Permissions that must be exact — enforce after the file copy
 echo ">>> Hardening permissions..."
@@ -19,16 +21,15 @@ chmod 600 /etc/wpa_supplicant/wpa_supplicant.conf
 # Root password
 echo ""
 echo ">>> Set ROOT password:"
-passwd root; or exit 1
+run passwd root
 
 # Admin user
 # wheel is added explicitly here so plain 'useradd -m <name>' later won't get sudo
 echo ""
-echo -n ">>> Admin username: "
-read ADMIN_USER
-useradd -m -G wheel $ADMIN_USER; or exit 1
+read -P ">>> Admin username: " ADMIN_USER
+run useradd -m -G wheel $ADMIN_USER
 echo ">>> Set password for $ADMIN_USER:"
-passwd $ADMIN_USER; or exit 1
+run passwd $ADMIN_USER
 
 echo ""
 echo ">>> apply-config done."

@@ -1,5 +1,7 @@
 #!/usr/bin/env fish
 
+source (dirname (status filename))/helpers/die
+
 # setup-fish — runs INSIDE the chroot.
 # Installs Fisher and all plugins listed in /tmp/fish-plugins globally.
 #
@@ -31,7 +33,7 @@ source $FISHER_FUNC
 echo ">>> Installing plugins..."
 for plugin in (grep -v '^\s*#' $PLUGINS_FILE | grep -v '^\s*$')
     echo "  $plugin"
-    fisher install $plugin; or begin; echo "ERROR: failed to install $plugin"; exit 1; end
+    run fisher install $plugin
 end
 
 echo ">>> setup-fish done."

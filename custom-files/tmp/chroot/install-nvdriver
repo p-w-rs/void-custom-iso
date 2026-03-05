@@ -8,9 +8,10 @@
 #
 # Run order: install-pkgs → install-nvdriver → install-cuda → finalize
 
+source (dirname (status filename))/helpers/die
+
 set DRIVER_VER  580.126.18
 set DRIVER_RUN  /tmp/NVIDIA-Linux-x86_64-{$DRIVER_VER}.run
-# Driver 580.x pairs with CUDA 13.0 (590.x pairs with CUDA 13.1)
 set EXTRACT_DIR /tmp/nvidia-extract
 set KERNEL_VER  (uname -r)
 set KERNEL_SRC  /usr/src/kernel-headers-{$KERNEL_VER}
@@ -23,18 +24,18 @@ echo ""
 # TARGET_ARCH=x86_64, bypassing the installer's broken tegra detection.
 echo ">>> Extracting..."
 rm -rf $EXTRACT_DIR
-$DRIVER_RUN --extract-only --target $EXTRACT_DIR || exit 1
+run $DRIVER_RUN --extract-only --target $EXTRACT_DIR
 
 # ── Step 2: Userspace components ─────────────────────────────────────────────
 echo ">>> Installing userspace components..."
-$DRIVER_RUN \
+run $DRIVER_RUN \
     --silent \
     --no-kernel-module \
     --install-libglvnd \
     --no-nvidia-modprobe \
     --no-nouveau-check \
     --no-backup \
-    --no-questions || exit 1
+    --no-questions
 
 # ── Step 3: Build open kernel modules ────────────────────────────────────────
 # TARGET_ARCH=x86_64 prevents the Kbuild system from pulling in arm64/tegra
@@ -61,20 +62,20 @@ void nv_clk_clear_handles(void *d)        {}
 printf 'CFLAGS_uvm_gpu_access_counters.o := -O1\n' \
     >> nvidia-uvm/Makefile
 
-make modules \
+run make modules \
     TARGET_ARCH=x86_64 \
     KERNEL_UNAME=$KERNEL_VER \
     SYSSRC=$KERNEL_SRC \
     SYSOUT=$KERNEL_SRC \
     NV_VERBOSE=1 \
     EXTRA_CFLAGS="-Wno-missing-prototypes" \
-    -j(nproc) || exit 1
+    -j(nproc)
 
 # ── Step 4: Install modules ───────────────────────────────────────────────────
 echo ">>> Installing kernel modules..."
-make modules_install \
+run make modules_install \
     TARGET_ARCH=x86_64 \
-    KERNEL_UNAME=$KERNEL_VER || exit 1
+    KERNEL_UNAME=$KERNEL_VER
 
 # ── Step 5: Register with DKMS ───────────────────────────────────────────────
 # Copies source to /usr/src/nvidia-$DRIVER_VER so DKMS rebuilds on kernel updates.
@@ -113,7 +114,7 @@ DEST_MODULE_LOCATION[3]="/kernel/drivers/video"
 DEST_MODULE_LOCATION[4]="/kernel/drivers/video"
 ' $DRIVER_VER $KERNEL_SRC > /usr/src/nvidia-$DRIVER_VER/dkms.conf
 
-dkms add     -m nvidia -v $DRIVER_VER --force              || exit 1
+run dkms add     -m nvidia -v $DRIVER_VER --force
 dkms build   -m nvidia -v $DRIVER_VER \
     --kernelsourcedir $KERNEL_SRC -k $KERNEL_VER
 or begin
@@ -121,7 +122,7 @@ or begin
     cat /var/lib/dkms/nvidia/$DRIVER_VER/build/make.log
     exit 1
 end
-dkms install -m nvidia -v $DRIVER_VER -k $KERNEL_VER --force || exit 1
+run dkms install -m nvidia -v $DRIVER_VER -k $KERNEL_VER --force
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 rm -rf $EXTRACT_DIR

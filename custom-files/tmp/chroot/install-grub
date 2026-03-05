@@ -7,9 +7,11 @@
 #   install-grub              → internal drive (writes NVRAM entry)
 #   install-grub --removable  → USB/image (fallback EFI path, no NVRAM)
 
+source (dirname (status filename))/helpers/die
+
 echo "=== GRUB Installation ==="
 
-mountpoint -q /boot/efi; or begin; echo "ERROR: /boot/efi not mounted"; exit 1; end
+run mountpoint -q /boot/efi
 
 # --removable  → installs to /EFI/BOOT/BOOTX64.EFI so any machine can boot it
 # --no-nvram   → don't write boot entries into the host firmware (safe in chroot)
@@ -17,15 +19,14 @@ set FLAGS
 contains -- --removable $argv; and set FLAGS --removable --no-nvram
 
 echo ">>> grub-install..."
-grub-install \
+run grub-install \
     --target=x86_64-efi \
     --efi-directory=/boot/efi \
     --bootloader-id=void \
     --recheck \
     $FLAGS
-or exit 1
 
 echo ">>> grub-mkconfig..."
-grub-mkconfig -o /boot/grub/grub.cfg; or exit 1
+run grub-mkconfig -o /boot/grub/grub.cfg
 
 echo ">>> install-grub done."

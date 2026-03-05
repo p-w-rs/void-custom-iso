@@ -10,6 +10,8 @@
 # CUDA_BUNDLED is the driver version the CUDA installer bundles (used only
 # in the filename; we pass --override to suppress the version mismatch warning).
 
+source (dirname (status filename))/helpers/die
+
 set CUDA_VER     13.0.0
 set CUDA_MAJOR   13.0
 set CUDA_BUNDLED 580.65.06
@@ -27,7 +29,7 @@ chmod +x $CUDA_RUN
 # --no-man-page             : keep install lean
 # --override                : suppress driver version mismatch warning (no running driver in chroot)
 echo ">>> Installing CUDA $CUDA_VER to $CUDA_PATH..."
-$CUDA_RUN \
+run $CUDA_RUN \
     --silent \
     --toolkit \
     --toolkitpath=$CUDA_PATH \
@@ -35,7 +37,6 @@ $CUDA_RUN \
     --no-drm \
     --no-man-page \
     --override
-or exit 1
 
 # Symlink /usr/local/cuda → versioned path so tools can find it without hardcoding the version
 ln -sf $CUDA_PATH /usr/local/cuda

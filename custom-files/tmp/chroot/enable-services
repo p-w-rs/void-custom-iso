@@ -4,8 +4,10 @@
 # Symlinks each service listed in /tmp/services into runit's default runsvdir.
 # Edit custom-files/tmp/services to add or remove services.
 
+source (dirname (status filename))/helpers/die
+
 set SERVICES_FILE /tmp/services
-test -f $SERVICES_FILE; or begin; echo "ERROR: $SERVICES_FILE not found"; exit 1; end
+run test -f $SERVICES_FILE
 
 echo "=== Enabling Services ==="
 

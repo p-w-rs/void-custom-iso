@@ -19,8 +19,7 @@ set DISK $argv[1]
 test -b $DISK; or die "'$DISK' is not a block device"
 
 echo "WARNING: This will DESTROY all data on $DISK"
-echo -n "Type the device name to confirm: "
-read CONFIRM
+read -P "Type $DISK to confirm: " CONFIRM
 test "$CONFIRM" = "$DISK"; or die "Confirmation failed. Aborting."
 
 # ── Partition layout ──────────────────────────────────────────────────────────
