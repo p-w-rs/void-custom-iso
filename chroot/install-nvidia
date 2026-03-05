@@ -16,20 +16,20 @@
 #
 # ── Download these on the host before running run-chroot ──────────────────────
 # Driver (check https://www.nvidia.com/en-us/drivers/unix/ for latest):
-#   wget -P /mnt/tmp https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.18/NVIDIA-Linux-x86_64-580.126.18.run
+#   wget -P /mnt/tmp -nc https://us.download.nvidia.com/XFree86/Linux-x86_64/590.48.01/NVIDIA-Linux-x86_64-590.48.01.run
 #
-#   NVIDIA-Linux-x86_64-580.126.18.run
+#   NVIDIA-Linux-x86_64-590.48.01.run
 #
 # CUDA (check https://developer.nvidia.com/cuda-downloads for latest runfile URL):
-#   wget -P /mnt/tmp https://developer.download.nvidia.com/compute/cuda/13.1.1/local_installers/cuda_13.1.1_590.48.01_linux.run
+#   wget -P /mnt/tmp -nc https://developer.download.nvidia.com/compute/cuda/13.1.1/local_installers/cuda_13.1.1_590.48.01_linux.run
 #
 #   cuda_13.1.1_590.48.01_linux.run
 # ─────────────────────────────────────────────────────────────────────────────
 
-set DRIVER_VER   580.126.18
+set DRIVER_VER   590.48.01
 set CUDA_VER     13.1.1
 set DRIVER_RUN   NVIDIA-Linux-x86_64-{$DRIVER_VER}.run
-set CUDA_RUN     cuda_{$CUDA_VER}_590.48.01_linux.run
+set CUDA_RUN     cuda_{$CUDA_VER}_{$DRIVER_VER}_linux.run
 set CUDA_PATH    /usr/local/cuda-13.1
 set ASSETS       /tmp
 

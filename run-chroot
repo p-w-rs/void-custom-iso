@@ -55,7 +55,7 @@ sudo cp -rv $ROOT/custom-files/. $CHROOT/
 echo "    Done."
 
 # ── Download nvidia assets ─────────────────────────────────────────────────────
-wget -P $CHROOT/tmp -nc https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.18/NVIDIA-Linux-x86_64-580.126.18.run || exit 1
+wget -P $CHROOT/tmp -nc https://us.download.nvidia.com/XFree86/Linux-x86_64/590.48.01/NVIDIA-Linux-x86_64-590.48.01.run || exit 1
 wget -P $CHROOT/tmp -nc https://developer.download.nvidia.com/compute/cuda/13.1.1/local_installers/cuda_13.1.1_590.48.01_linux.run || exit 1
 
 # ── Copy chroot scripts into chroot ───────────────────────────────────────────
