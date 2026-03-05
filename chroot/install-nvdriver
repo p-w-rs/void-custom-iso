@@ -77,8 +77,23 @@ echo ">>> Registering with DKMS..."
 mkdir -p /usr/src/nvidia-$DRIVER_VER
 cp -r $EXTRACT_DIR/kernel-open/* /usr/src/nvidia-$DRIVER_VER/
 
-# Fix unsubstituted __DKMS_MODULES placeholder in the extracted dkms.conf
-sed -i 's/__DKMS_MODULES/nvidia/g' /usr/src/nvidia-$DRIVER_VER/dkms.conf
+# The extracted dkms.conf has unsubstituted placeholders — rewrite it cleanly.
+# BUILT_MODULE_NAME/DEST_MODULE_LOCATION entries must cover all five .ko files.
+printf 'PACKAGE_NAME="nvidia"
+PACKAGE_VERSION="%s"
+AUTOINSTALL="yes"
+MAKE[0]="'"'"'make'"'"' -j$(nproc) KERNEL_UNAME=${kernelver} TARGET_ARCH=x86_64 SYSSRC=%s modules"
+BUILT_MODULE_NAME[0]="nvidia"
+BUILT_MODULE_NAME[1]="nvidia-uvm"
+BUILT_MODULE_NAME[2]="nvidia-modeset"
+BUILT_MODULE_NAME[3]="nvidia-drm"
+BUILT_MODULE_NAME[4]="nvidia-peermem"
+DEST_MODULE_LOCATION[0]="/kernel/drivers/video"
+DEST_MODULE_LOCATION[1]="/kernel/drivers/video"
+DEST_MODULE_LOCATION[2]="/kernel/drivers/video"
+DEST_MODULE_LOCATION[3]="/kernel/drivers/video"
+DEST_MODULE_LOCATION[4]="/kernel/drivers/video"
+' $DRIVER_VER $KERNEL_SRC > /usr/src/nvidia-$DRIVER_VER/dkms.conf
 
 dkms add     -m nvidia -v $DRIVER_VER --force              || exit 1
 dkms build   -m nvidia -v $DRIVER_VER \
