@@ -42,6 +42,10 @@ $DRIVER_RUN \
 echo ">>> Building kernel modules..."
 cd $EXTRACT_DIR/kernel-open
 
+# nv-clk.c unconditionally includes <soc/tegra/bpmp-abi.h> which doesn't exist
+# on x86_64. Stub it out — nothing on x86 calls into the clock management code.
+echo "int nvclk_init(void) { return 0; }" > nvidia/nv-clk.c
+
 make modules \
     TARGET_ARCH=x86_64 \
     KERNEL_UNAME=$KERNEL_VER \
