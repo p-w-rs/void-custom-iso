@@ -2,68 +2,30 @@
 
 # install-cuda
 # Runs INSIDE the chroot.
-# Installs ONLY the CUDA toolkit (13.1.x) from the official .run installer.
+# Installs the CUDA toolkit only — skips the bundled driver since
+# install-nvdriver already installed the correct open kernel module version.
 #
-# Must run AFTER install-nvidia-driver and BEFORE finalize.
-#
-# The CUDA .run installer bundles its own copy of the driver. We explicitly
-# skip that bundled driver because install-nvidia-driver already installed the
-# correct version above. Installing the bundled driver here would overwrite the
-# open kernel module with the closed proprietary one, which does not support
-# Blackwell cards.
-#
-# ── Download on the host before running run-chroot ────────────────────────────
-# CUDA (check https://developer.nvidia.com/cuda-downloads for latest runfile):
-#   wget -P /mnt/tmp -nc \
-#     https://developer.download.nvidia.com/compute/cuda/13.1.1/local_installers/cuda_13.1.1_590.48.01_linux.run
-# ─────────────────────────────────────────────────────────────────────────────
+# Run order: install-pkgs → install-nvdriver → install-cuda → finalize
 
 set DRIVER_VER  590.48.01
 set CUDA_VER    13.1.1
 set CUDA_MAJOR  13.1
-set CUDA_RUN    cuda_{$CUDA_VER}_{$DRIVER_VER}_linux.run
+set CUDA_RUN    /tmp/cuda_{$CUDA_VER}_{$DRIVER_VER}_linux.run
 set CUDA_PATH   /usr/local/cuda-{$CUDA_MAJOR}
-set ASSETS      /tmp
 
 echo "=== CUDA Toolkit Installation ==="
-echo "    CUDA   : $CUDA_VER"
-echo "    Target : $CUDA_PATH"
 echo ""
 
-# ── Preflight check ───────────────────────────────────────────────────────────
-if not test -f $ASSETS/$CUDA_RUN
-    echo "ERROR: $ASSETS/$CUDA_RUN not found."
-    echo "       Run the wget command above on the host, then retry."
-    exit 1
-end
+chmod +x $CUDA_RUN
 
-chmod +x $ASSETS/$CUDA_RUN
-
-# ── Install CUDA toolkit ──────────────────────────────────────────────────────
-# --silent          : non-interactive mode.
-# --toolkit         : install the CUDA toolkit components only (compiler,
-#                     libraries, headers, tools). This is the flag that selects
-#                     the toolkit subset of the installer payload.
-# --toolkitpath     : where to install the toolkit. Using a versioned path
-#                     (cuda-13.1) allows multiple CUDA versions to coexist and
-#                     lets the symlink below select the active version.
-# --no-driver       : skip the bundled NVIDIA display driver. We already
-#                     installed the correct open kernel module driver in
-#                     install-nvidia-driver; installing the bundled closed
-#                     driver here would break Blackwell support.
-# --no-opengl-libs  : skip the OpenGL libraries bundled with CUDA. These are
-#                     already provided by libglvnd (installed in the driver
-#                     step), and installing duplicates would cause conflicts
-#                     with the system GL dispatch layer.
-# --no-drm          : skip the DRM (Direct Rendering Manager) libraries for
-#                     the same reason — libglvnd covers this.
-# --no-man-page     : skip man page installation to keep the install lean.
-# --override        : suppress version mismatch warnings that arise because the
-#                     CUDA installer checks for a running driver matching the
-#                     bundled driver version. Inside a chroot there is no
-#                     running driver, so this flag prevents a false failure.
-echo ">>> Installing CUDA $CUDA_VER toolkit to $CUDA_PATH ..."
-$ASSETS/$CUDA_RUN \
+# --toolkit / --toolkitpath : install toolkit only to versioned path
+# --no-driver               : skip bundled driver (open kernel module already installed)
+# --no-opengl-libs          : libglvnd already provides these
+# --no-drm                  : same
+# --no-man-page             : keep install lean
+# --override                : suppress version mismatch warnings (no running driver in chroot)
+echo ">>> Installing CUDA $CUDA_VER to $CUDA_PATH..."
+$CUDA_RUN \
     --silent \
     --toolkit \
     --toolkitpath=$CUDA_PATH \
@@ -73,10 +35,7 @@ $ASSETS/$CUDA_RUN \
     --no-man-page \
     --override || exit 1
 
-# ── Create stable version-independent symlink ─────────────────────────────────
 ln -sf $CUDA_PATH /usr/local/cuda
 
 echo ""
-echo ">>> install-nvidia complete."
-echo "    CUDA installed to : $CUDA_PATH  →  /usr/local/cuda"
-echo "    Kernel module     : built via DKMS, will be in initramfs after finalize"
+echo ">>> install-cuda complete."
