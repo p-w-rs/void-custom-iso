@@ -1,31 +1,32 @@
 #!/usr/bin/env fish
 
-# install-nvdriver
-# Runs INSIDE the chroot.
+# install-nvdriver — runs INSIDE the chroot.
 # Installs the NVIDIA open kernel module driver from the official .run installer.
-# Uses a manual extract-and-build approach to avoid the tegra headers bug in
-# the .run installer's built-in build system on x86_64 + CONFIG_COMMON_CLK.
+#
+# We extract manually rather than using the installer's built-in build system
+# because it has a tegra headers bug on x86_64 + CONFIG_COMMON_CLK that causes
+# it to pull in arm64 code paths and fail. Extract-and-build sidesteps this.
 #
 # Run order: install-pkgs → install-nvdriver → install-cuda → finalize
+#
+# To upgrade: update DRIVER_VER and the .run URL in run-chroot.
 
-set DRIVER_VER  580.126.18
-set DRIVER_RUN  /tmp/NVIDIA-Linux-x86_64-{$DRIVER_VER}.run
-# Driver 580.x pairs with CUDA 13.0 (590.x pairs with CUDA 13.1)
-set EXTRACT_DIR /tmp/nvidia-extract
-set KERNEL_VER  (uname -r)
-set KERNEL_SRC  /usr/src/kernel-headers-{$KERNEL_VER}
+set DRIVER_VER 580.126.18
+set DRIVER_RUN /tmp/NVIDIA-Linux-x86_64-{$DRIVER_VER}.run
+set EXTRACT    /tmp/nvidia-extract
+set KERNEL_VER (uname -r)
+set KERNEL_SRC /usr/src/kernel-headers-{$KERNEL_VER}
 
-echo "=== NVIDIA Driver Installation ==="
-echo ""
+echo "=== NVIDIA Driver $DRIVER_VER ==="
 
-# ── Step 1: Extract ───────────────────────────────────────────────────────────
-# --extract-only lets us drive the kernel build ourselves with explicit
-# TARGET_ARCH=x86_64, bypassing the installer's broken tegra detection.
+# ── 1. Extract ────────────────────────────────────────────────────────────────
+# --extract-only lets us pass TARGET_ARCH=x86_64 to make ourselves,
+# bypassing the installer's broken tegra detection.
 echo ">>> Extracting..."
-rm -rf $EXTRACT_DIR
-$DRIVER_RUN --extract-only --target $EXTRACT_DIR || exit 1
+rm -rf $EXTRACT
+$DRIVER_RUN --extract-only --target $EXTRACT; or exit 1
 
-# ── Step 2: Userspace components ─────────────────────────────────────────────
+# ── 2. Userspace components ───────────────────────────────────────────────────
 echo ">>> Installing userspace components..."
 $DRIVER_RUN \
     --silent \
@@ -34,55 +35,56 @@ $DRIVER_RUN \
     --no-nvidia-modprobe \
     --no-nouveau-check \
     --no-backup \
-    --no-questions || exit 1
+    --no-questions
+or exit 1
 
-# ── Step 3: Build open kernel modules ────────────────────────────────────────
-# TARGET_ARCH=x86_64 prevents the Kbuild system from pulling in arm64/tegra
-# code paths even when CONFIG_COMMON_CLK is set.
-echo ">>> Building kernel modules..."
-cd $EXTRACT_DIR/kernel-open
-
+# ── 3. Patch nv-clk.c ────────────────────────────────────────────────────────
 # nv-clk.c unconditionally includes <soc/tegra/bpmp-abi.h> which doesn't exist
-# on x86_64. Stub it out — nothing on x86 calls into the clock management code.
-printf '#include <linux/types.h>\n
-// nv-clk.c stub for x86_64 — the real file includes <soc/tegra/bpmp-abi.h>
-// which does not exist on x86. These symbols are referenced by nvidia.ko but
-// are no-ops on non-Tegra hardware.
-int  nv_enable_clk(void *h)               { return 0; }
-int  nv_disable_clk(void *h)              { return 0; }
-int  nv_get_max_freq(void *h)             { return 0; }
-int  nv_set_freq(void *h, u32 f)          { return 0; }
+# on x86_64. We stub it out — nothing on x86 calls into clock management code.
+echo ">>> Patching nv-clk.c for x86_64..."
+printf '
+#include <linux/types.h>
+// x86_64 stub — real file includes <soc/tegra/bpmp-abi.h> which does not exist here.
+// These symbols are referenced by nvidia.ko but are no-ops on non-Tegra hardware.
+int  nv_enable_clk(void *h)                { return 0; }
+int  nv_disable_clk(void *h)               { return 0; }
+int  nv_get_max_freq(void *h)              { return 0; }
+int  nv_set_freq(void *h, u32 f)           { return 0; }
 void nv_clk_get_handles(void *d, void **h, u32 *n) {}
-void nv_clk_clear_handles(void *d)        {}
-' > nvidia/nv-clk.c
+void nv_clk_clear_handles(void *d)         {}
+' > $EXTRACT/kernel-open/nvidia/nv-clk.c
 
-make modules \
+# ── 4. Build kernel modules ───────────────────────────────────────────────────
+echo ">>> Building kernel modules..."
+make -C $EXTRACT/kernel-open modules \
     TARGET_ARCH=x86_64 \
     KERNEL_UNAME=$KERNEL_VER \
     SYSSRC=$KERNEL_SRC \
     SYSOUT=$KERNEL_SRC \
     NV_VERBOSE=1 \
     EXTRA_CFLAGS="-Wno-missing-prototypes" \
-    -j(nproc) || exit 1
+    -j(nproc)
+or exit 1
 
-# ── Step 4: Install modules ───────────────────────────────────────────────────
+# ── 5. Install modules ────────────────────────────────────────────────────────
 echo ">>> Installing kernel modules..."
-make modules_install \
+make -C $EXTRACT/kernel-open modules_install \
     TARGET_ARCH=x86_64 \
-    KERNEL_UNAME=$KERNEL_VER || exit 1
+    KERNEL_UNAME=$KERNEL_VER
+or exit 1
 
-# ── Step 5: Register with DKMS ───────────────────────────────────────────────
+# ── 6. Register with DKMS ────────────────────────────────────────────────────
 # Copies source to /usr/src/nvidia-$DRIVER_VER so DKMS rebuilds on kernel updates.
+# We rewrite dkms.conf because the extracted version has unsubstituted placeholders.
 echo ">>> Registering with DKMS..."
-mkdir -p /usr/src/nvidia-$DRIVER_VER
-cp -r $EXTRACT_DIR/kernel-open/* /usr/src/nvidia-$DRIVER_VER/
+set DKMS_SRC /usr/src/nvidia-$DRIVER_VER
+mkdir -p $DKMS_SRC
+cp -r $EXTRACT/kernel-open/* $DKMS_SRC/
 
-# The extracted dkms.conf has unsubstituted placeholders — rewrite it cleanly.
-# BUILT_MODULE_NAME/DEST_MODULE_LOCATION entries must cover all five .ko files.
 printf 'PACKAGE_NAME="nvidia"
 PACKAGE_VERSION="%s"
 AUTOINSTALL="yes"
-MAKE[0]="'"'"'make'"'"' -j$(nproc) KERNEL_UNAME=${kernelver} TARGET_ARCH=x86_64 SYSSRC=%s modules"
+MAKE[0]="make -j$(nproc) KERNEL_UNAME=${kernelver} TARGET_ARCH=x86_64 SYSSRC=%s modules"
 BUILT_MODULE_NAME[0]="nvidia"
 BUILT_MODULE_NAME[1]="nvidia-uvm"
 BUILT_MODULE_NAME[2]="nvidia-modeset"
@@ -93,15 +95,11 @@ DEST_MODULE_LOCATION[1]="/kernel/drivers/video"
 DEST_MODULE_LOCATION[2]="/kernel/drivers/video"
 DEST_MODULE_LOCATION[3]="/kernel/drivers/video"
 DEST_MODULE_LOCATION[4]="/kernel/drivers/video"
-' $DRIVER_VER $KERNEL_SRC > /usr/src/nvidia-$DRIVER_VER/dkms.conf
+' $DRIVER_VER $KERNEL_SRC > $DKMS_SRC/dkms.conf
 
-dkms add     -m nvidia -v $DRIVER_VER --force              || exit 1
-dkms build   -m nvidia -v $DRIVER_VER \
-    --kernelsourcedir $KERNEL_SRC -k $KERNEL_VER           || exit 1
-dkms install -m nvidia -v $DRIVER_VER -k $KERNEL_VER --force || exit 1
+dkms add     -m nvidia -v $DRIVER_VER --force;                              or exit 1
+dkms build   -m nvidia -v $DRIVER_VER --kernelsourcedir $KERNEL_SRC -k $KERNEL_VER; or exit 1
+dkms install -m nvidia -v $DRIVER_VER -k $KERNEL_VER --force;              or exit 1
 
-# ── Cleanup ───────────────────────────────────────────────────────────────────
-rm -rf $EXTRACT_DIR
-
-echo ""
-echo ">>> install-nvdriver complete."
+rm -rf $EXTRACT
+echo ">>> install-nvdriver done."

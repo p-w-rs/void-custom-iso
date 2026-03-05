@@ -1,30 +1,31 @@
 #!/usr/bin/env fish
 
-# install-cuda
-# Runs INSIDE the chroot.
-# Installs the CUDA toolkit only — skips the bundled driver since
-# install-nvdriver already installed the correct open kernel module version.
+# install-cuda — runs INSIDE the chroot.
+# Installs the CUDA toolkit only — the driver was already installed by
+# install-nvdriver, so we skip everything the .run bundles alongside it.
 #
 # Run order: install-pkgs → install-nvdriver → install-cuda → finalize
+#
+# To upgrade: update CUDA_VER, CUDA_BUNDLED, and the .run URL in run-chroot.
+# CUDA_BUNDLED is the driver version the CUDA installer bundles (used only
+# in the filename; we pass --override to suppress the version mismatch warning).
 
-set DRIVER_VER      580.126.18
-set CUDA_VER        13.0.0
-set CUDA_MAJOR      13.0
-set CUDA_BUNDLED    580.65.06
-set CUDA_RUN        /tmp/cuda_{$CUDA_VER}_{$CUDA_BUNDLED}_linux.run
-set CUDA_PATH       /usr/local/cuda-{$CUDA_MAJOR}
+set CUDA_VER     13.0.0
+set CUDA_MAJOR   13.0
+set CUDA_BUNDLED 580.65.06
+set CUDA_RUN     /tmp/cuda_{$CUDA_VER}_{$CUDA_BUNDLED}_linux.run
+set CUDA_PATH    /usr/local/cuda-{$CUDA_MAJOR}
 
-echo "=== CUDA Toolkit Installation ==="
-echo ""
+echo "=== CUDA Toolkit $CUDA_VER ==="
 
 chmod +x $CUDA_RUN
 
-# --toolkit / --toolkitpath : install toolkit only to versioned path
-# --no-driver               : skip bundled driver (open kernel module already installed)
+# --toolkit / --toolkitpath : install toolkit only, to a versioned path
+# --no-driver               : skip bundled driver (already installed)
 # --no-opengl-libs          : libglvnd already provides these
 # --no-drm                  : same
 # --no-man-page             : keep install lean
-# --override                : suppress version mismatch warnings (no running driver in chroot)
+# --override                : suppress driver version mismatch warning (no running driver in chroot)
 echo ">>> Installing CUDA $CUDA_VER to $CUDA_PATH..."
 $CUDA_RUN \
     --silent \
@@ -33,9 +34,10 @@ $CUDA_RUN \
     --no-opengl-libs \
     --no-drm \
     --no-man-page \
-    --override || exit 1
+    --override
+or exit 1
 
+# Symlink /usr/local/cuda → versioned path so tools can find it without hardcoding the version
 ln -sf $CUDA_PATH /usr/local/cuda
 
-echo ""
-echo ">>> install-cuda complete."
+echo ">>> install-cuda done."

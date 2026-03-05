@@ -1,0 +1,10 @@
+# Fish plugins to install system-wide via Fisher.
+# One plugin per line — same format as fisher install (owner/repo or owner/repo@tag).
+# See https://github.com/jorgebucaran/fisher for finding plugins.
+
+kidonng/zoxide.fish
+givensuman/fish-eza
+PatrickF1/fzf.fish
+jorgebucaran/autopair.fish
+franciscolourenco/done
+IlanCosman/tide@v6
