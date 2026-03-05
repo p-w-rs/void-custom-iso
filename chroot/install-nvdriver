@@ -44,7 +44,19 @@ cd $EXTRACT_DIR/kernel-open
 
 # nv-clk.c unconditionally includes <soc/tegra/bpmp-abi.h> which doesn't exist
 # on x86_64. Stub it out — nothing on x86 calls into the clock management code.
-echo "int nvclk_init(void) { return 0; }" > nvidia/nv-clk.c
+cat > nvidia/nv-clk.c << 'EOF'
+#include <linux/types.h>
+
+// nv-clk.c stub for x86_64 — the real file includes <soc/tegra/bpmp-abi.h>
+// which doesn't exist on x86. These symbols are referenced by nvidia.ko but
+// are no-ops on non-Tegra hardware.
+int  nv_enable_clk(void *h)          { return 0; }
+int  nv_disable_clk(void *h)         { return 0; }
+int  nv_get_max_freq(void *h)        { return 0; }
+int  nv_set_freq(void *h, u32 f)     { return 0; }
+void nv_clk_get_handles(void *d, void **h, u32 *n) {}
+void nv_clk_clear_handles(void *d)   {}
+EOF
 
 make modules \
     TARGET_ARCH=x86_64 \
