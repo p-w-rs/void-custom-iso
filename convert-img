@@ -1,0 +1,58 @@
+#!/usr/bin/env fish
+
+# convert-img — convert void.img to a format suitable for use in an emulator.
+#
+# Supported formats:
+#   qcow2   QEMU/KVM (compressed, supports snapshots)  [default]
+#   vmdk    VMware / VirtualBox
+#   vdi     VirtualBox native
+#   vhd     Hyper-V / Azure
+#
+# Usage:
+#   ./convert-img                          → void.qcow2 (default)
+#   ./convert-img void.img                 → void.qcow2
+#   ./convert-img void.img out.qcow2       → explicit output path
+#   ./convert-img void.img out.vmdk vmdk   → explicit format
+
+source (dirname (status filename))/helpers/die
+
+# ── Arguments (all optional) ──────────────────────────────────────────────────
+set IMG    (test -n "$argv[1]"; and echo $argv[1]; or echo void.img)
+set FMT    (test -n "$argv[3]"; and echo $argv[3]; or echo qcow2)
+
+# Derive default output name from input name + format if not given
+if test -n "$argv[2]"
+    set OUT $argv[2]
+else
+    set BASE (string replace -r '\.[^.]+$' '' $IMG)
+    set OUT  {$BASE}.{$FMT}
+end
+
+test -f $IMG; or die "'$IMG' not found"
+
+switch $FMT
+    case qcow2 vmdk vdi vhd
+        # supported
+    case '*'
+        die "Unknown format '$FMT'. Supported: qcow2, vmdk, vdi, vhd"
+end
+
+type -q qemu-img; or die "qemu-img not found — install qemu-img or qemu-utils"
+
+# ── Zero free blocks for better compression ───────────────────────────────────
+# Requires the image to be attached as a loop device.
+echo ">>> Zeroing free blocks in $IMG (improves compression)..."
+set LOOP (sudo losetup --find --partscan --show $IMG)
+or die "losetup failed"
+
+sudo zerofree -v {$LOOP}p3
+run sudo losetup -d $LOOP
+
+# ── Convert ───────────────────────────────────────────────────────────────────
+echo ">>> Converting $IMG → $OUT (format: $FMT)..."
+run qemu-img convert -f raw -O $FMT -c $IMG $OUT
+
+echo ""
+qemu-img info $OUT
+echo ""
+echo ">>> convert-img done."

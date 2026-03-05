@@ -1,9 +1,6 @@
 #!/usr/bin/env fish
 
-# cleanup — unmount the installed system and release the device.
-#
-# Loop device:    zeros free blocks, converts void.img → void.qcow2, detaches loop.
-# Physical disk:  just unmounts cleanly.
+# cleanup — unmount the installed system and release the loop device (if any).
 #
 # Usage:
 #   ./cleanup /dev/loop0      (disk image)
@@ -15,37 +12,20 @@ source (dirname (status filename))/helpers/die
 test (count $argv) -eq 1; or die "Usage: "(status filename)" <device>"
 set DEV $argv[1]
 
-if string match -qr 'loop' $DEV
-    set IS_LOOP true;  set P {$DEV}p
-else if string match -qr 'nvme' $DEV
-    set IS_LOOP false; set P {$DEV}p
+if string match -qr 'nvme|loop' $DEV
+    set P {$DEV}p
 else
-    set IS_LOOP false; set P $DEV
+    set P $DEV
 end
 
-echo "Device: $DEV"
-
-# ── Unmount everything ────────────────────────────────────────────────────────
+echo ">>> Unmounting $DEV..."
 run sudo umount  /mnt/boot/efi
 run sudo swapoff {$P}2
 run sudo umount  /mnt
 
-# ── Loop device: zero free blocks → qcow2 → detach ───────────────────────────
-# Zeroing lets qemu-img compress more aggressively, shrinking the final image.
-if $IS_LOOP
-    echo ""
-    echo ">>> Zeroing free blocks (improves compression)..."
-    run sudo zerofree -v {$P}3
-
-    echo ">>> Converting void.img → void.qcow2..."
-    run qemu-img convert -f raw -O qcow2 -c void.img void.qcow2
-
+if string match -qr 'loop' $DEV
     echo ">>> Detaching $DEV..."
     run sudo losetup -d $DEV
-
-    echo ""
-    qemu-img info void.qcow2
 end
 
-echo ""
 echo ">>> cleanup done."
