@@ -77,11 +77,13 @@ echo ">>> Registering with DKMS..."
 mkdir -p /usr/src/nvidia-$DRIVER_VER
 cp -r $EXTRACT_DIR/kernel-open/* /usr/src/nvidia-$DRIVER_VER/
 
-dkms add     -m nvidia -v $DRIVER_VER --force          || exit 1
+# Fix unsubstituted __DKMS_MODULES placeholder in the extracted dkms.conf
+sed -i 's/__DKMS_MODULES/nvidia/g' /usr/src/nvidia-$DRIVER_VER/dkms.conf
+
+dkms add     -m nvidia -v $DRIVER_VER --force              || exit 1
 dkms build   -m nvidia -v $DRIVER_VER \
-    --kernelsourcedir $KERNEL_SRC --kernel $KERNEL_VER || exit 1
-dkms install -m nvidia -v $DRIVER_VER \
-    --kernel $KERNEL_VER                               || exit 1
+    --kernelsourcedir $KERNEL_SRC -k $KERNEL_VER           || exit 1
+dkms install -m nvidia -v $DRIVER_VER -k $KERNEL_VER       || exit 1
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 rm -rf $EXTRACT_DIR
