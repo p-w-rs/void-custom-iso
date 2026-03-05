@@ -47,7 +47,7 @@ for script in $SCRIPTS
     set flags
     test $script = install-grub; and set flags $GRUB_FLAGS
 
-    xchroot $CHROOT /usr/bin/fish $CHROOT$SDIR/$script $flags
+    xchroot $CHROOT /usr/bin/fish $SDIR/$script $flags
     or die "$script failed"
 end
 
