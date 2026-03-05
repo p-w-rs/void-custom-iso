@@ -1,0 +1,3 @@
+#!/bin/sh
+nvidia-smi -pm 1
+sv down nvidia-persistenced
