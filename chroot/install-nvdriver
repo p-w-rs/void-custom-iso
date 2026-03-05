@@ -3,17 +3,16 @@
 # install-nvidia-driver
 # Runs INSIDE the chroot.
 # Installs ONLY the NVIDIA open kernel module driver (590.x) from the official
-# .run installer, using a manual extract-and-build approach to avoid the tegra
-# headers / architecture detection bug present in the .run installer's built-in
-# build system on x86_64 hosts with CONFIG_COMMON_CLK enabled.
+# .run installer using a manual extract-and-build approach to avoid the tegra
+# headers / architecture detection bug in the .run installer's built-in build
+# system on x86_64 hosts with CONFIG_COMMON_CLK enabled.
 #
 # Must run AFTER install-pkgs and BEFORE install-cuda and finalize, so that the
 # DKMS module is built and present when finalize runs xbps-reconfigure -fa
 # (which rebuilds the initramfs and includes the module).
 #
 # Blackwell (RTX 50xx) cards REQUIRE the open kernel module variant.
-# The open module is mandatory for Blackwell; the proprietary closed module
-# does not support GB10x/GB20x silicon at all.
+# The closed proprietary module does not support GB10x/GB20x silicon at all.
 #
 # Prerequisites installed by install-pkgs (packages/nvidia.fish):
 #   dkms linux-mainline-headers gcc make pkg-config libglvnd libglvnd-devel nvtop
@@ -28,60 +27,53 @@ set DRIVER_VER  590.48.01
 set DRIVER_RUN  NVIDIA-Linux-x86_64-{$DRIVER_VER}.run
 set ASSETS      /tmp
 set EXTRACT_DIR /tmp/nvidia-extract
+set KERNEL_VER  (uname -r)
+set KERNEL_SRC  /usr/src/linux-headers-{$KERNEL_VER}
 
 echo "=== NVIDIA Driver Installation (Blackwell / open kernel module) ==="
-echo "    Driver : $DRIVER_VER"
+echo "    Driver  : $DRIVER_VER"
+echo "    Kernel  : $KERNEL_VER"
+echo "    Headers : $KERNEL_SRC"
 echo ""
 
-# ── Preflight check ───────────────────────────────────────────────────────────
+# ── Preflight checks ──────────────────────────────────────────────────────────
 if not test -f $ASSETS/$DRIVER_RUN
     echo "ERROR: $ASSETS/$DRIVER_RUN not found."
     echo "       Run the wget command above on the host, then retry."
     exit 1
 end
 
-# Resolve the kernel version provided by linux-mainline-headers.
-# We cannot use `uname -r` inside a chroot because it reflects the HOST kernel,
-# not the target kernel. Instead we find the newest headers directory under
-# /usr/src and derive the version string from its name.
-set KERNEL_VER (ls /usr/src | grep linux-headers | sort -V | tail -1 | string replace "linux-headers-" "")
-
-if test -z "$KERNEL_VER"
-    echo "ERROR: No kernel headers found under /usr/src."
+if not test -d $KERNEL_SRC
+    echo "ERROR: Kernel headers not found at $KERNEL_SRC"
     echo "       Ensure linux-mainline-headers is installed (install-pkgs)."
     exit 1
 end
-
-set KERNEL_SRC /usr/src/linux-headers-{$KERNEL_VER}
-echo "    Kernel headers : $KERNEL_SRC"
-echo ""
 
 chmod +x $ASSETS/$DRIVER_RUN
 
 # ── Step 1: Extract the .run archive ─────────────────────────────────────────
 # --extract-only   : unpack the self-extracting archive without running the
 #                    installer. Gives us direct access to the kernel-open/
-#                    source tree so we can drive the build ourselves and pass
+#                    source tree so we can drive the build ourselves with
 #                    explicit architecture flags, bypassing the installer's
-#                    broken auto-detection that tries to pull in tegra headers
-#                    on x86_64 systems with CONFIG_COMMON_CLK enabled.
+#                    broken auto-detection that pulls in tegra headers on
+#                    x86_64 systems with CONFIG_COMMON_CLK enabled.
 echo ">>> Extracting driver package to $EXTRACT_DIR ..."
 rm -rf $EXTRACT_DIR
 $ASSETS/$DRIVER_RUN --extract-only --target $EXTRACT_DIR || exit 1
 
 # ── Step 2: Install userspace components (no kernel module yet) ───────────────
 # --no-kernel-module   : skip the kernel module build entirely at this stage;
-#                        we will build it manually in step 3 with correct flags.
+#                        we build it manually in step 3 with correct flags.
 # --install-libglvnd   : install NVIDIA's libglvnd GL/Vulkan dispatch libraries
 #                        (the vendor-neutral dispatch layer required for OpenGL
 #                        and Vulkan to coexist with Mesa on the same system).
 # --no-nvidia-modprobe : skip the setuid nvidia-modprobe helper; not needed on
 #                        Void Linux with runit — module loading is handled by
 #                        the nvidia-modeset service or direct modprobe calls.
-# --no-nouveau-check   : suppress the check for the nouveau driver being loaded;
-#                        nouveau is not loaded inside a chroot anyway.
-# --no-backup          : skip backing up any files that would be overwritten;
-#                        we are doing a fresh install so there is nothing to back up.
+# --no-nouveau-check   : suppress the check for nouveau being loaded; it is not
+#                        loaded inside a chroot anyway.
+# --no-backup          : skip backing up overwritten files; fresh install.
 # --no-questions       : suppress any remaining interactive prompts.
 # --silent             : non-interactive mode; errors still go to the log.
 echo ">>> Installing userspace components (libraries, binaries, X driver) ..."
@@ -104,7 +96,7 @@ echo ">>> Userspace components installed."
 #
 # TARGET_ARCH=x86_64   : explicitly declare the target architecture so the
 #                        Kbuild system never attempts to pull in arm64/tegra
-#                        code paths, even if CONFIG_COMMON_CLK is set.
+#                        code paths, even if CONFIG_COMMON_CLK is set. <kcite ref="76"/>
 # KERNEL_UNAME         : the kernel version string; used to locate the correct
 #                        module install path under /lib/modules/.
 # SYSSRC               : path to the kernel headers source tree.
@@ -135,13 +127,16 @@ make modules_install \
 
 # ── Step 5: Register with DKMS ───────────────────────────────────────────────
 # DKMS (Dynamic Kernel Module Support) will automatically rebuild the nvidia
-# kernel module whenever a new kernel is installed. Without this step the
-# module would only exist for the current kernel version.
+# kernel module whenever a new kernel is installed. Without this the module
+# only exists for the current kernel version.
 #
-# The DKMS source tree is expected at /usr/src/nvidia-$DRIVER_VER/.
-# The .run installer places a dkms.conf there when --no-kernel-module is used
-# alongside userspace installation; if it is missing we copy it from the
-# extracted tree.
+# The open kernel module source is copied to /usr/src/nvidia-$DRIVER_VER/ so
+# DKMS can find and rebuild it on future kernel updates.
+#
+# dkms add    : register the module source with the DKMS database.
+# dkms build  : compile the module for the target kernel.
+# dkms install: install the compiled module into /lib/modules/.
+# --force     : overwrite any existing DKMS registration for this version.
 echo ""
 echo ">>> Registering with DKMS ..."
 
@@ -150,10 +145,6 @@ if not test -d /usr/src/nvidia-$DRIVER_VER
     cp -r $EXTRACT_DIR/kernel-open/* /usr/src/nvidia-$DRIVER_VER/
 end
 
-# dkms add    : register the module source with the DKMS database.
-# dkms build  : compile the module for the target kernel.
-# dkms install: install the compiled module into /lib/modules/.
-# --force     : overwrite any existing DKMS registration for this version.
 dkms add     -m nvidia -v $DRIVER_VER --force
 dkms build   -m nvidia -v $DRIVER_VER \
     --kernelsourcedir $KERNEL_SRC \
@@ -163,12 +154,12 @@ dkms install -m nvidia -v $DRIVER_VER \
 
 # ── Step 6: Blacklist nouveau ─────────────────────────────────────────────────
 # Prevent the open-source nouveau driver from loading and conflicting with the
-# NVIDIA proprietary driver. This is required even on a fresh install because
-# the kernel may auto-load nouveau for any detected NVIDIA PCI device.
+# NVIDIA driver. Required even on a fresh install because the kernel may
+# auto-load nouveau for any detected NVIDIA PCI device.
 echo ""
 echo ">>> Blacklisting nouveau ..."
 mkdir -p /etc/modprobe.d
-echo "blacklist nouveau" > /etc/modprobe.d/nouveau.conf
+echo "blacklist nouveau"          > /etc/modprobe.d/nouveau.conf
 echo "options nouveau modeset=0" >> /etc/modprobe.d/nouveau.conf
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
