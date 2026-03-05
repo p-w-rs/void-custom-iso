@@ -61,6 +61,8 @@ $ASSETS/$DRIVER_RUN \
     --silent \
     --install-libglvnd \
     --no-nvidia-modprobe \
+    --no-nouveau-check \
+    --no-kernel-module-source \
     --no-backup \
     --no-questions || exit 1
 
