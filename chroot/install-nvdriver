@@ -98,7 +98,7 @@ DEST_MODULE_LOCATION[4]="/kernel/drivers/video"
 dkms add     -m nvidia -v $DRIVER_VER --force              || exit 1
 dkms build   -m nvidia -v $DRIVER_VER \
     --kernelsourcedir $KERNEL_SRC -k $KERNEL_VER           || exit 1
-dkms install -m nvidia -v $DRIVER_VER -k $KERNEL_VER       || exit 1
+dkms install -m nvidia -v $DRIVER_VER -k $KERNEL_VER --force || exit 1
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 rm -rf $EXTRACT_DIR
