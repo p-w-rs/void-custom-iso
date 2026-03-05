@@ -43,17 +43,19 @@ for script in apply-config install-nvdriver install-cuda enable-services install
     if test $script = install-grub
         set flags $GRUB_FLAGS
     end
-    xchroot $CHROOT /usr/bin/fish /root/void-setup/$script $flags
-    set exit_status $status
 
-    # xchroot sometimes fails to unmount /dev if a short-lived process lingers.
-    # Force-unmount any leftover chroot mounts before the next script runs.
+    sudo rm -f $CHROOT/tmp/.status
+    xchroot $CHROOT /usr/bin/fish -c \
+        "/root/void-setup/$script $flags; echo \$status > /tmp/.status"
+
+    # Force-unmount any mounts xchroot left behind
     for mnt in dev/pts dev/shm dev proc sys run
         sudo umount -lf $CHROOT/$mnt 2>/dev/null
     end
 
-    if test $exit_status -ne 0
-        echo "ERROR: $script failed (exit $exit_status)"
+    set inner_status (sudo cat $CHROOT/tmp/.status 2>/dev/null)
+    if test "$inner_status" != "0"
+        echo "ERROR: $script failed (exit $inner_status)"
         exit 1
     end
 end
