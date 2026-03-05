@@ -1,0 +1,17 @@
+#!/usr/bin/env fish
+
+set fisher_path=/etc/fish
+
+# Install Fisher to system functions directory
+curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish -o /etc/fish/functions/fisher.fish
+
+# Source Fisher to make it available in current session
+source /etc/fish/functions/fisher.fish
+
+# Install plugins
+fisher install kidonng/zoxide.fish
+fisher install givensuman/fish-eza
+fisher install PatrickF1/fzf.fish
+fisher install jorgebucaran/autopair.fish
+fisher install franciscolourenco/done
+fisher install IlanCosman/tide@v6

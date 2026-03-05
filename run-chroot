@@ -33,7 +33,7 @@ sudo chmod +x $WORK/* || exit 1
 
 # ── Run scripts inside chroot ──────────────────────────────────────────────────
 # To add a new chroot step: drop a script in custom-files/tmp/chroot/ and add it to this list.
-for script in apply-config install-nvdriver install-cuda enable-services install-grub finalize
+for script in apply-config install-nvdriver install-cuda setup-fish enable-services install-grub finalize
     echo ""
     echo ">>> Running $script..."
     set flags
