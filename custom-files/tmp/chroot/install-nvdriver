@@ -54,7 +54,14 @@ void nv_clk_get_handles(void *d, void **h, u32 *n) {}
 void nv_clk_clear_handles(void *d)         {}
 ' > $EXTRACT/kernel-open/nvidia/nv-clk.c
 
-# ── 4. Build kernel modules ───────────────────────────────────────────────────
+# ── 4. Work around GCC ICE in uvm_gpu_access_counters.c ──────────────────────
+# GCC crashes with an internal compiler error on this file at -O2.
+# Inject a per-file kbuild flag to force -O1 for just this translation unit.
+echo ">>> Patching uvm_gpu_access_counters optimization level..."
+printf 'CFLAGS_uvm_gpu_access_counters.o := -O1\n' \
+    >> $EXTRACT/kernel-open/nvidia-uvm/Makefile
+
+# ── 5. Build kernel modules ───────────────────────────────────────────────────
 echo ">>> Building kernel modules..."
 make -C $EXTRACT/kernel-open modules \
     TARGET_ARCH=x86_64 \
@@ -66,20 +73,36 @@ make -C $EXTRACT/kernel-open modules \
     -j(nproc)
 or exit 1
 
-# ── 5. Install modules ────────────────────────────────────────────────────────
+# ── 6. Install modules ────────────────────────────────────────────────────────
 echo ">>> Installing kernel modules..."
 make -C $EXTRACT/kernel-open modules_install \
     TARGET_ARCH=x86_64 \
-    KERNEL_UNAME=$KERNEL_VER
+    KERNEL_UNAME=$KERNEL_VER \
+    SYSSRC=$KERNEL_SRC \
+    SYSOUT=$KERNEL_SRC
 or exit 1
 
-# ── 6. Register with DKMS ────────────────────────────────────────────────────
+# ── 7. Register with DKMS ────────────────────────────────────────────────────
 # Copies source to /usr/src/nvidia-$DRIVER_VER so DKMS rebuilds on kernel updates.
 # We rewrite dkms.conf because the extracted version has unsubstituted placeholders.
 echo ">>> Registering with DKMS..."
 set DKMS_SRC /usr/src/nvidia-$DRIVER_VER
 mkdir -p $DKMS_SRC
 cp -r $EXTRACT/kernel-open/* $DKMS_SRC/
+
+# Re-apply patches to the DKMS source tree so rebuilds work correctly.
+printf '
+#include <linux/types.h>
+int  nv_enable_clk(void *h)                { return 0; }
+int  nv_disable_clk(void *h)               { return 0; }
+int  nv_get_max_freq(void *h)              { return 0; }
+int  nv_set_freq(void *h, u32 f)           { return 0; }
+void nv_clk_get_handles(void *d, void **h, u32 *n) {}
+void nv_clk_clear_handles(void *d)         {}
+' > $DKMS_SRC/nvidia/nv-clk.c
+
+printf 'CFLAGS_uvm_gpu_access_counters.o := -O1\n' \
+    >> $DKMS_SRC/nvidia-uvm/Makefile
 
 printf 'PACKAGE_NAME="nvidia"
 PACKAGE_VERSION="%s"
@@ -97,9 +120,9 @@ DEST_MODULE_LOCATION[3]="/kernel/drivers/video"
 DEST_MODULE_LOCATION[4]="/kernel/drivers/video"
 ' $DRIVER_VER $KERNEL_SRC $KERNEL_SRC > $DKMS_SRC/dkms.conf
 
-dkms add     -m nvidia -v $DRIVER_VER --force;                              or exit 1
+dkms add     -m nvidia -v $DRIVER_VER --force;                                       or exit 1
 dkms build   -m nvidia -v $DRIVER_VER --kernelsourcedir $KERNEL_SRC -k $KERNEL_VER; or exit 1
-dkms install -m nvidia -v $DRIVER_VER -k $KERNEL_VER --force;              or exit 1
+dkms install -m nvidia -v $DRIVER_VER -k $KERNEL_VER --force;                       or exit 1
 
 rm -rf $EXTRACT
 echo ">>> install-nvdriver done."
