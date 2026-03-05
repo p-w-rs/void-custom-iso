@@ -39,7 +39,15 @@ sudo chmod +x $WORK/* || exit 1
 for script in apply-config install-nvdriver install-cuda enable-services install-grub finalize
     echo ""
     echo ">>> Running $script..."
-    xchroot $CHROOT /usr/bin/fish /root/void-setup/$script $GRUB_FLAGS || exit 1
+    if test $script = install-grub
+        xchroot $CHROOT /usr/bin/fish /root/void-setup/$script $GRUB_FLAGS
+    else
+        xchroot $CHROOT /usr/bin/fish /root/void-setup/$script
+    end
+    if test $status -ne 0
+        echo "ERROR: $script failed"
+        exit 1
+    end
 end
 
 # ── Cleanup ────────────────────────────────────────────────────────────────────
