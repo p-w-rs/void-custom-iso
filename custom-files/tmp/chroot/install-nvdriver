@@ -121,7 +121,12 @@ DEST_MODULE_LOCATION[4]="/kernel/drivers/video"
 ' $DRIVER_VER $KERNEL_SRC $KERNEL_SRC > $DKMS_SRC/dkms.conf
 
 dkms add     -m nvidia -v $DRIVER_VER --force;                                       or exit 1
-dkms build   -m nvidia -v $DRIVER_VER --kernelsourcedir $KERNEL_SRC -k $KERNEL_VER; or exit 1
+dkms build   -m nvidia -v $DRIVER_VER --kernelsourcedir $KERNEL_SRC -k $KERNEL_VER
+or begin
+    echo ">>> DKMS build failed — make.log:"
+    cat /var/lib/dkms/nvidia/$DRIVER_VER/build/make.log
+    exit 1
+end
 dkms install -m nvidia -v $DRIVER_VER -k $KERNEL_VER --force;                       or exit 1
 
 rm -rf $EXTRACT
