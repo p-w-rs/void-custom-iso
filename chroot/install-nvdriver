@@ -43,12 +43,6 @@ if not test -f $ASSETS/$DRIVER_RUN
     exit 1
 end
 
-if not test -d $KERNEL_SRC
-    echo "ERROR: Kernel headers not found at $KERNEL_SRC"
-    echo "       Ensure linux-mainline-headers is installed (install-pkgs)."
-    exit 1
-end
-
 chmod +x $ASSETS/$DRIVER_RUN
 
 # ── Step 1: Extract the .run archive ─────────────────────────────────────────
