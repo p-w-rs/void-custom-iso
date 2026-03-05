@@ -3,8 +3,7 @@
 # install-nvidia
 # Runs INSIDE the chroot.
 # Installs the NVIDIA open kernel module driver (580.x) and CUDA toolkit (13.1.x)
-# from official .run installers placed in /root/nvidia-assets on the host
-# before chroot entry.
+# from official .run installers
 #
 # Must run AFTER install-pkgs and BEFORE finalize, so that the DKMS module is
 # built and present when finalize runs xbps-reconfigure -fa (which rebuilds
