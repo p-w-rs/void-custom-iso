@@ -28,8 +28,10 @@ run sudo cp -rv (dirname (status filename))/custom-files/. $CHROOT/
 # install-nvdriver / install-cuda chroot scripts when upgrading.
 run wget -P $CHROOT/tmp -nc \
     https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.18/NVIDIA-Linux-x86_64-580.126.18.run
+chmod +x $CHROOT/tmp/NVIDIA-Linux-x86_64-580.126.18.run
 run wget -P $CHROOT/tmp -nc \
     https://developer.download.nvidia.com/compute/cuda/13.0.0/local_installers/cuda_13.0.0_580.65.06_linux.run
+chmod +x $CHROOT/tmp/cuda_13.0.0_580.65.06_linux.run
 
 run sudo chmod +x $CHROOT$SDIR/*
 
