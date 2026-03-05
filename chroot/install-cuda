@@ -30,7 +30,6 @@ $CUDA_RUN \
     --silent \
     --toolkit \
     --toolkitpath=$CUDA_PATH \
-    --no-driver \
     --no-opengl-libs \
     --no-drm \
     --no-man-page \
