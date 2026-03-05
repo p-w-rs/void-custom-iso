@@ -32,7 +32,9 @@ GRUB_DISABLE_OS_PROBER=true
 #                                   per-queue default handle it (best for NVMe/SSD)
 #   pcie_aspm=off                 — disable PCIe power saving negotiation at boot
 #                                   (removes a stall on some hardware)
-GRUB_CMDLINE_LINUX_DEFAULT="apparmor=1 security=apparmor mitigations=off nowatchdog threadirqs quiet loglevel=0 rd.udev.log_level=0 udev.log_level=0 elevator=none pcie_aspm=off"
+#   nvidia_drm.modeset=1          - enables kernel modesetting for the NVIDIA DRM driver, required for proper suspend/resume
+#
+GRUB_CMDLINE_LINUX_DEFAULT="apparmor=1 security=apparmor mitigations=off nowatchdog threadirqs quiet loglevel=0 rd.udev.log_level=0 udev.log_level=0 elevator=none pcie_aspm=off nvidia_drm.modeset=1"
 
 # ── Platform ──────────────────────────────────────────────────────────────────
 GRUB_PLATFORM=efi

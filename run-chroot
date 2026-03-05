@@ -25,6 +25,11 @@ if not test -d $CHROOT/etc
     exit 1
 end
 
+# ── Download assets ─────────────────────────────────────────────────────────────
+wget -P /mnt/tmp https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.18/NVIDIA-Linux-x86_64-580.126.18.run
+wget -P /mnt/tmp https://developer.download.nvidia.com/compute/cuda/13.1.1/local_installers/cuda_13.1.1_590.48.01_linux.run
+
+
 for f in \
     $ROOT/custom-files/etc/fstab \
     $ROOT/custom-files/etc/hostname \
@@ -38,7 +43,11 @@ for f in \
     $ROOT/custom-files/etc/chrony.conf \
     $ROOT/custom-files/etc/default/apparmor \
     $ROOT/custom-files/etc/default/grub \
-    $ROOT/custom-files/etc/void-install/services \
+    $ROOT/custom-files/etc/profile.d/cuda.fish \
+    $ROOT/custom-files/etc/profile.d/cuda.sh \
+    $ROOT/custom-files/tmp/services \
+    $ROOT/custom-files/tmp/NVIDIA-Linux-x86_64-580.126.18.run \
+    $ROOT/custom-files/tmp/cuda_13.1.1_590.48.01_linux.run
 
     if not test -f $f
         echo "ERROR: missing expected custom file: $f"
@@ -52,29 +61,30 @@ echo ">>> Copying custom-files into chroot..."
 sudo cp -rv $ROOT/custom-files/. $CHROOT/
 echo "    Done."
 
-# ── Make the mlterm-tty1 run script executable ────────────────────────────────
-sudo chmod +x $CHROOT/etc/sv/mlterm-tty1/run
-
 # ── Copy chroot scripts into chroot ───────────────────────────────────────────
 echo ""
 echo ">>> Copying chroot scripts to $CHROOT_WORK..."
 sudo mkdir -p $CHROOT_WORK
-sudo cp $ROOT/chroot/apply-config    $CHROOT_WORK/
-sudo cp $ROOT/chroot/enable-services $CHROOT_WORK/
-sudo cp $ROOT/chroot/install-grub    $CHROOT_WORK/
-sudo cp $ROOT/chroot/build-mlterm    $CHROOT_WORK/
-sudo cp $ROOT/chroot/finalize        $CHROOT_WORK/
+sudo cp $ROOT/chroot/apply-config      $CHROOT_WORK/
+sudo cp $ROOT/chroot/install-nvidia    $CHROOT_WORK/
+sudo cp $ROOT/chroot/enable-services   $CHROOT_WORK/
+sudo cp $ROOT/chroot/install-grub      $CHROOT_WORK/
+sudo cp $ROOT/chroot/finalize          $CHROOT_WORK/
 sudo chmod +x \
     $CHROOT_WORK/apply-config \
+    $CHROOT_WORK/install-nvidia \
     $CHROOT_WORK/enable-services \
     $CHROOT_WORK/install-grub \
-    $CHROOT_WORK/build-mlterm \
     $CHROOT_WORK/finalize
 
 # ── Run scripts inside chroot ──────────────────────────────────────────────────
 echo ""
 echo ">>> Running apply-config inside chroot..."
 xchroot $CHROOT /usr/bin/fish /root/void-setup/apply-config || exit 1
+
+echo ""
+echo ">>> Running install-nvidia inside chroot..."
+xchroot $CHROOT /usr/bin/fish /root/void-setup/install-nvidia || exit 1
 
 echo ""
 echo ">>> Running enable-services inside chroot..."

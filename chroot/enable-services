@@ -4,7 +4,7 @@
 # Runs INSIDE the chroot.
 # Reads /etc/void-install/services and symlinks each into runit.
 
-set SERVICES_FILE /etc/void-install/services
+set SERVICES_FILE /tmp/services
 
 if not test -f $SERVICES_FILE
     echo "ERROR: $SERVICES_FILE not found."
