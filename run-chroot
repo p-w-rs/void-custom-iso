@@ -10,7 +10,7 @@
 
 set ROOT       (dirname (status filename))
 set CHROOT     /mnt
-set WORK       $CHROOT/root/void-setup
+set WORK       $CHROOT/tmp/chroot
 
 # ── Parse arguments ────────────────────────────────────────────────────────────
 set GRUB_FLAGS
@@ -28,14 +28,11 @@ sudo cp -rv $ROOT/custom-files/. $CHROOT/ || exit 1
 wget -P $CHROOT/tmp -nc https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.18/NVIDIA-Linux-x86_64-580.126.18.run || exit 1
 wget -P $CHROOT/tmp -nc https://developer.download.nvidia.com/compute/cuda/13.0.0/local_installers/cuda_13.0.0_580.65.06_linux.run || exit 1
 
-# ── Copy and arm chroot scripts ────────────────────────────────────────────────
-echo ">>> Copying chroot scripts..."
-sudo mkdir -p $WORK
-sudo cp $ROOT/chroot/* $WORK/
+# ── Ensure scripts are executable ────────────────────────────────────────────────
 sudo chmod +x $WORK/* || exit 1
 
 # ── Run scripts inside chroot ──────────────────────────────────────────────────
-# To add a new chroot step: drop a script in chroot/ and add it to this list.
+# To add a new chroot step: drop a script in custom-files/tmp/chroot/ and add it to this list.
 for script in apply-config install-nvdriver install-cuda enable-services install-grub finalize
     echo ""
     echo ">>> Running $script..."
@@ -46,7 +43,7 @@ for script in apply-config install-nvdriver install-cuda enable-services install
 
     sudo rm -f $CHROOT/tmp/.status
     xchroot $CHROOT /usr/bin/fish -c \
-        "/root/void-setup/$script $flags; echo \$status > /tmp/.status"
+        "$WORK/$script $flags; echo \$status > /tmp/.status"
 
     # Force-unmount any mounts xchroot left behind
     for mnt in dev/pts dev/shm dev proc sys run
@@ -61,6 +58,5 @@ for script in apply-config install-nvdriver install-cuda enable-services install
 end
 
 # ── Cleanup ────────────────────────────────────────────────────────────────────
-sudo rm -rf $WORK
 echo ""
 echo ">>> All done. Unmount with: sudo swapoff LABEL=swap && sudo umount -R /mnt"
