@@ -31,7 +31,7 @@ run wget -P $CHROOT/tmp -nc \
 run wget -P $CHROOT/tmp -nc \
     https://developer.download.nvidia.com/compute/cuda/13.0.0/local_installers/cuda_13.0.0_580.65.06_linux.run
 
-run sudo chmod +x $CHROOT/$SDIR/*
+run sudo chmod +x $CHROOT$SDIR/*
 
 # ── Run each script inside the chroot ─────────────────────────────────────────
 # Order matters: apply-config sets up the system, nvdriver/cuda build the GPU
@@ -47,7 +47,7 @@ for script in $SCRIPTS
     set flags
     test $script = install-grub; and set flags $GRUB_FLAGS
 
-    xchroot $CHROOT /usr/bin/fish $CHROOT/$SDIR/$script $flags
+    xchroot $CHROOT /usr/bin/fish $CHROOT$SDIR/$script $flags
     or die "$script failed"
 end
 
