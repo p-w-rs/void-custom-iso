@@ -50,7 +50,6 @@ end
 
 chmod +x $ASSETS/$DRIVER_RUN
 
-# --open              : open kernel module — required for Blackwell (RTX 50xx)
 # --dkms              : register with DKMS so the module rebuilds on kernel updates
 # --silent            : non-interactive
 # --install-libglvnd  : install NVIDIA's libglvnd GL/Vulkan dispatch libraries
@@ -58,7 +57,6 @@ chmod +x $ASSETS/$DRIVER_RUN
 # --no-backup         : skip backing up conflicting files
 # --no-questions      : suppress any remaining interactive prompts
 $ASSETS/$DRIVER_RUN \
-    --open \
     --dkms \
     --silent \
     --install-libglvnd \
