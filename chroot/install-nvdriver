@@ -46,6 +46,7 @@ make modules \
     SYSSRC=$KERNEL_SRC \
     SYSOUT=$KERNEL_SRC \
     NV_VERBOSE=1 \
+    EXTRA_CFLAGS="-Wno-missing-prototypes" \
     -j(nproc) || exit 1
 
 # ── Step 4: Install modules ───────────────────────────────────────────────────
